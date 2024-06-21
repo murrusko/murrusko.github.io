@@ -1,4 +1,4 @@
-const categories = {  }
+const categories = { thl: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],ctf: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],windows: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],principiante: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},], }
 
 console.log(categories)
 
