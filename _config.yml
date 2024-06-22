@@ -11,6 +11,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
   - jekyll-feed
+  - jekyll-analytics
 
 collections_dir: all_collections
 collections:
@@ -24,3 +25,8 @@ defaults:
       layout: "post"
       permalink: /posts/:title/
 exclude: ["sitemap.xml", "feed.xml", "LICENSE", "README.md"]
+
+jekyll_analytics:
+  GoogleAnalytics:          # Add, if you want to track with Google Analytics
+    id: G-KL94Y4EGBS         # Required - replace with your tracking id
+    anonymizeIp: false 
