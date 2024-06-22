@@ -1,4 +1,4 @@
-const categories = { thl: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],ctf: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],windows: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],principiante: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},], }
+const categories = { thl: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],ctf: [{ url: `/posts/hereBash/`, date: `22 Jun 2024`, title: `HereBash`},{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],windows: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],principiante: [{ url: `/posts/Ensala/`, date: `21 Jun 2024`, title: `Ensala de papas`},],dockerlabs: [{ url: `/posts/hereBash/`, date: `22 Jun 2024`, title: `HereBash`},],linux: [{ url: `/posts/hereBash/`, date: `22 Jun 2024`, title: `HereBash`},],medio: [{ url: `/posts/hereBash/`, date: `22 Jun 2024`, title: `HereBash`},], }
 
 console.log(categories)
 
