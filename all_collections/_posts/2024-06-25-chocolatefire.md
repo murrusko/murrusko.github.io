@@ -1,7 +1,7 @@
 ---
 layout: post
 title: ChocolateFire
-date: 2024.06.26
+date: 2024.06.25
 categories: [dockerlabs, ctf, linux, medio]
 ---
 
@@ -156,7 +156,7 @@ PORT     STATE  SERVICE        VERSION
 
 Lo único que llama la atención es el puerto `9090`, vemos que nos da una respuesta `HTTP1.1 200 OK`.  Entramos con el navegador a la url `http://172.17.0.2:9090`:
 
-![image](/assets/images/chocolatefire/1.png)
+![image](/assets/images/chocolatefire/1.jpg)
 
 Y nos encontramos un panel de login de `openfire 4.7.4`. 
 
