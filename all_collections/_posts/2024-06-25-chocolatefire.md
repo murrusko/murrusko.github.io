@@ -160,11 +160,8 @@ Lo único que llama la atención es el puerto `9090`, vemos que nos da una respu
 
 Y nos encontramos un panel de login de `openfire 4.7.4`. 
 
-Buscamos si existe alguna vulnerabilidad para esa versión. 
-
-https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades/cve-2023-32315
-
-En el artículo hace mención a un plugin de `metasploit`. Lo abrimos con `msfconsole` y buscamos el servicio que queremos explotar:
+Buscamos si existe alguna vulnerabilidad para esa versión. Encontramos el exploit [cve-2023-32315](https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades/cve-2023-32315).
+En el artículo hace mención a un plugin de `metasploit`. Abrimos metasploit con `msfconsole` y buscamos el servicio que queremos explotar:
 
 ```bash
 msf6 > search openfire
