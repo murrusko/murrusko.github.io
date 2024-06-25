@@ -226,11 +226,8 @@ PORT     STATE  SERVICE        VERSION
 
 <p>Y nos encontramos un panel de login de <code class="language-plaintext highlighter-rouge">openfire 4.7.4</code>.</p>
 
-<p>Buscamos si existe alguna vulnerabilidad para esa versión.</p>
-
-<p>https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades/cve-2023-32315</p>
-
-<p>En el artículo hace mención a un plugin de <code class="language-plaintext highlighter-rouge">metasploit</code>. Lo abrimos con <code class="language-plaintext highlighter-rouge">msfconsole</code> y buscamos el servicio que queremos explotar:</p>
+<p>Buscamos si existe alguna vulnerabilidad para esa versión. Encontramos el exploit <a href="https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades/cve-2023-32315">cve-2023-32315</a>.
+En el artículo hace mención a un plugin de <code class="language-plaintext highlighter-rouge">metasploit</code>. Abrimos metasploit con <code class="language-plaintext highlighter-rouge">msfconsole</code> y buscamos el servicio que queremos explotar:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> search openfire
 
