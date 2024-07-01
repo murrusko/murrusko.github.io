@@ -1,7 +1,7 @@
 ---
 layout: post
-title: Accounting
-date: 2024.06.21
+title: accounting
+date: 2024.07.01
 categories: [thl, ctf, windows, principiante]
 ---
 
