@@ -209,7 +209,7 @@ print(f"Valor 100: {s100}")
 
 Lo ejecutamos:
 
-```python
+```bash
 $ python s100.py -s99 2925996709184014603
 Valor 100: 707173620968215045
 ```
