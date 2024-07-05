@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-05T21:30:19+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">NodeClimb</title><link href="/posts/nodeclimb/" rel="alternate" type="text/html" title="NodeClimb" /><published>2024-07-05T00:00:00+00:00</published><updated>2024-07-05T00:00:00+00:00</updated><id>/posts/nodeclimb</id><content type="html" xml:base="/posts/nodeclimb/"><![CDATA[<p><img src="/assets/images/node/node.png" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-05T21:32:49+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">NodeClimb</title><link href="/posts/nodeclimb/" rel="alternate" type="text/html" title="NodeClimb" /><published>2024-07-05T00:00:00+00:00</published><updated>2024-07-05T00:00:00+00:00</updated><id>/posts/nodeclimb</id><content type="html" xml:base="/posts/nodeclimb/"><![CDATA[<p><img src="/assets/images/node/node.png" alt="image" /></p>
 
 <p>Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
 
@@ -144,8 +144,9 @@ sudo</span> <span class="nt">-l</span>
 
 <p>Y ejecutamos el comando con sudo:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/node /home/mario/script.js# <span class="nb">whoami</span><span class="p">;</span><span class="nb">hostname</span><span class="p">;</span><span class="nb">date
-</span>root
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/node /home/mario/script.js
+<span class="c"># whoami;hostname;date</span>
+root
 014bc8cff695
 Fri Jul  5 21:14:24 UTC 2024
 <span class="c">#</span>
