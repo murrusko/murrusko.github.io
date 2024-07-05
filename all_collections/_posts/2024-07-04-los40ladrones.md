@@ -5,8 +5,8 @@ date: 2024.07.04
 categories: [dockerlabs, ctf, linux, facil]
 ---
 
-![image](/assets/images/los40/lis40.jpg
-)
+![image](/assets/images/los40/los40.jpg)
+
 Estamos ante un docker que contiene una distribución Linux. Es de nivel fácil y es de la plataforma [dockerlabs](https://dockerlabs.es).
 
 # Enumeración
