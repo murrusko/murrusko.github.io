@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-03T00:07:58+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">r00tless</title><link href="/posts/r00tless/" rel="alternate" type="text/html" title="r00tless" /><published>2024-09-02T00:00:00+00:00</published><updated>2024-09-02T00:00:00+00:00</updated><id>/posts/r00tless</id><content type="html" xml:base="/posts/r00tless/"><![CDATA[<p><img src="/assets/images/r00tless/r00tless.png" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-03T00:10:38+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">r00tless</title><link href="/posts/r00tless/" rel="alternate" type="text/html" title="r00tless" /><published>2024-09-02T00:00:00+00:00</published><updated>2024-09-02T00:00:00+00:00</updated><id>/posts/r00tless</id><content type="html" xml:base="/posts/r00tless/"><![CDATA[<p><img src="/assets/images/r00tless/r00tless.png" alt="image" /></p>
 
 <p>Estamos ante un docker que contiene una distribución Linux. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
 
@@ -49,11 +49,6 @@ S-1-22-1-1003 Unix User<span class="se">\p</span>asssamba <span class="o">(</spa
 </code></pre></div></div>
 
 <p>Entre otras cosas encontramos un recurso compartido, <strong>read_only_share</strong>, y cuatro usuarios: <strong>root-false, sambauser, less y passsamba</strong>.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>crackmapexec smb <span class="nt">-u</span> root-false <span class="nt">-p</span> passsamba <span class="nt">--local-auth</span> 172.18.0.2
-SMB         172.18.0.2      445    64A2DD61671C     <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 0 <span class="o">(</span>name:64A2DD61671C<span class="o">)</span> <span class="o">(</span>domain:64A2DD61671C<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
-SMB         172.18.0.2      445    64A2DD61671C     <span class="o">[</span>+] 64A2DD61671C<span class="se">\r</span>oot-false:passsamba
-</code></pre></div></div>
 
 <p>Ahora pasamos a enumerar el servicio web. Primero hacemos un ataque de fuerza bruta para encontrar directorios y ficheros:</p>
 
