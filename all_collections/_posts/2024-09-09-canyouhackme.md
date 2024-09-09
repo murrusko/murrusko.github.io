@@ -7,7 +7,7 @@ categories: [thl, ctf, linux, principiante]
 
 ![image](/assets/images/canyou/canyou.jpg)
 
-En esta ocasión voy a resolver una máquina **Linux** creada por Enaitz de dificultad **Principiante** para la plataforma de [The Hackers Labs](https://thehackerslabs.com/).
+En esta ocasión voy a resolver una máquina **Linux** creada por **Enaitz** de dificultad **Principiante** para la plataforma de [The Hackers Labs](https://thehackerslabs.com/).
 
 # Enumeración
 
@@ -70,7 +70,7 @@ Se identifican las versiones de los servicios:
 ### Modificación del archivo `/etc/hosts`
 
 ```bash
-echo '10.0.2.169 canyouhackme.thl' | sudo tee -a /etc/hosts
+$ echo '10.0.2.169  canyouhackme.thl' | sudo tee -a /etc/hosts
 10.0.2.169 canyouhackme.thl
 ```
 
@@ -81,7 +81,7 @@ echo '10.0.2.169 canyouhackme.thl' | sudo tee -a /etc/hosts
 ### Interacción con el servidor web
 
 ```bash
-curl http://canyouhackme.thl
+$ curl http://canyouhackme.thl
 /* Hola juan, te he dejado un correo importate, cundo puedas, leelo */
 ```
 
@@ -95,7 +95,7 @@ Obtenemos en el código fuente un comentario que menciona a un usuario llamado "
 ### Ataque de fuerza bruta con `patator`
 
 ```bash
-patator ssh_login host=10.0.2.169 user=juan password=FILE0 0=~/rockyou.txt -x ignore:mesg='Authentication failed.' -x ignore:size=53
+$ patator ssh_login host=10.0.2.169 user=juan password=FILE0 0=~/rockyou.txt -x ignore:mesg='Authentication failed.' -x ignore:size=53
 22:26:03 patator    INFO - 0     40     0.105 | matrix                             |   610 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
 ```
 
