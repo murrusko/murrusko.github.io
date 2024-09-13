@@ -1,4 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-13T22:42:56+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html"></title><link href="/posts/2024-09-14-base/" rel="alternate" type="text/html" title="" /><published>2024-09-13T22:42:56+00:00</published><updated>2024-09-13T22:42:56+00:00</updated><id>/posts/2024-09-14-base</id><content type="html" xml:base="/posts/2024-09-14-base/"><![CDATA[<h3 id="2-escaneo-de-puertos">2: Escaneo de puertos</h3>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2024-09-13T22:45:45+00:00</updated><id>/feed.xml</id><title type="html">murrusko</title><author><name>murrusko</name><email>murrusko@proton.me</email></author><entry><title type="html">Base</title><link href="/posts/base/" rel="alternate" type="text/html" title="Base" /><published>2024-09-13T00:00:00+00:00</published><updated>2024-09-13T00:00:00+00:00</updated><id>/posts/base</id><content type="html" xml:base="/posts/base/"><![CDATA[<p><img src="/assets/images/base/0.jpg" alt="image" /></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por <strong>Enaitz</strong> de dificultad <strong>Principiante</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h3 id="1-escaneo-de-la-red-local">1: Escaneo de la red local</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> enp0s8 <span class="nt">--localnet</span>
+</code></pre></div></div>
+
+<p>Este comando utiliza <code class="language-plaintext highlighter-rouge">arp-scan</code>, que es una herramienta para descubrir hosts en una red local utilizando el protocolo ARP. La opción <code class="language-plaintext highlighter-rouge">-I enp0s8</code> especifica la interfaz de red, que en este caso es <code class="language-plaintext highlighter-rouge">enp0s8</code>. El parámetro <code class="language-plaintext highlighter-rouge">--localnet</code> le dice a la herramienta que escanee toda la red local.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10.0.2.10       08:00:27:11:15:84       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<p>Aquí vemos que se encontró un dispositivo en la red local con la dirección IP <code class="language-plaintext highlighter-rouge">10.0.2.10</code> y la dirección MAC correspondiente.</p>
+
+<hr />
+
+<h3 id="2-escaneo-de-puertos">2: Escaneo de puertos</h3>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 10.0.2.10 <span class="nt">-b</span> 10
 </code></pre></div></div>
@@ -204,7 +223,7 @@ flate:x:1002:1002::/home/flate:/bin/bash
 
 <p>¡Ya somos root!</p>
 
-<hr />]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author></entry><entry><title type="html">Insecure</title><link href="/posts/insecure/" rel="alternate" type="text/html" title="Insecure" /><published>2024-09-12T00:00:00+00:00</published><updated>2024-09-12T00:00:00+00:00</updated><id>/posts/insecure</id><content type="html" xml:base="/posts/insecure/"><![CDATA[<p><img src="/assets/images/insecure/0.jpg" alt="image" /></p>
+<hr />]]></content><author><name>murrusko</name><email>murrusko@proton.me</email></author><category term="thl" /><category term="ctf" /><category term="linux" /><category term="avanzado" /><summary type="html"><![CDATA[]]></summary></entry><entry><title type="html">Insecure</title><link href="/posts/insecure/" rel="alternate" type="text/html" title="Insecure" /><published>2024-09-12T00:00:00+00:00</published><updated>2024-09-12T00:00:00+00:00</updated><id>/posts/insecure</id><content type="html" xml:base="/posts/insecure/"><![CDATA[<p><img src="/assets/images/insecure/0.jpg" alt="image" /></p>
 
 <p>Estamos ante un docker que contiene una distribución Linux. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
 

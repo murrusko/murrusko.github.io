@@ -14,7 +14,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>murrusko | </title>
+  <title>murrusko | Base</title>
   
   <link rel="stylesheet" href="/assets/css/post.css" />
   <link rel="stylesheet" href="/assets/css/syntax.css" />
@@ -49,13 +49,40 @@
 
       <section class="article">
         <div class="article-header">
-          <h2 class="article-title"></h2>
+          <h2 class="article-title">Base</h2>
           <small class="date">13 Sep 2024</small>
           <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">avanzado</a>
             
           </div>
         </div>
         <div class="content">
+<p><img src="/assets/images/base/0.jpg" alt="image"></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por <strong>Enaitz</strong> de dificultad <strong>Principiante</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h3 id="1-escaneo-de-la-red-local">1: Escaneo de la red local</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> enp0s8 <span class="nt">--localnet</span>
+</code></pre></div></div>
+
+<p>Este comando utiliza <code class="language-plaintext highlighter-rouge">arp-scan</code>, que es una herramienta para descubrir hosts en una red local utilizando el protocolo ARP. La opción <code class="language-plaintext highlighter-rouge">-I enp0s8</code> especifica la interfaz de red, que en este caso es <code class="language-plaintext highlighter-rouge">enp0s8</code>. El parámetro <code class="language-plaintext highlighter-rouge">--localnet</code> le dice a la herramienta que escanee toda la red local.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10.0.2.10       08:00:27:11:15:84       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<p>Aquí vemos que se encontró un dispositivo en la red local con la dirección IP <code class="language-plaintext highlighter-rouge">10.0.2.10</code> y la dirección MAC correspondiente.</p>
+
+<hr>
+
 <h3 id="2-escaneo-de-puertos">2: Escaneo de puertos</h3>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 10.0.2.10 <span class="nt">-b</span> 10
