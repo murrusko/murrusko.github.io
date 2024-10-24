@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BNTQPFSFW4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BNTQPFSFW4');
+</script>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>murrusko | Curiosity</title>
+  
+  <link rel="stylesheet" href="/assets/css/post.css" />
+  <link rel="stylesheet" href="/assets/css/syntax.css" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <script src="/assets/js/categories.js"></script>
+  <script>
+    const currentTheme = localStorage.getItem("theme");
+    if (currentTheme) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("theme")
+      );
+    }
+  </script>
+  
+  <script defer src="/assets/js/lbox.js"></script>
+  
+</head>
+
+  <body>
+    <main>
+      <header>
+  <a class="site-title" href="/">murrusko</a>
+  <!-- dark/light mode -->
+  <span id="dark-mode-toggle" style="cursor: pointer">
+    <svg
+      stroke="currentColor"
+      fill="currentColor"
+      stroke-width="0"
+      viewBox="0 0 16 16"
+      height="1.2em"
+      width="1.2em"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13V2a6 6 0 1 1 0 12z"
+      ></path>
+    </svg>
+  </span>
+</header>
+
+      <section class="article">
+        <div class="article-header">
+          <h2 class="article-title">Curiosity</h2>
+          <small class="date">24 Oct 2024</small>
+          <div class="categories">
+            
+            <a href="#!" class="category">thl</a>
+            
+            <a href="#!" class="category">ctf</a>
+            
+            <a href="#!" class="category">AD</a>
+            
+            <a href="#!" class="category">experto</a>
+            
+          </div>
+        </div>
+        <div class="content"><p><img src="/assets/images/curiosity/0.png" alt="image" /></p>
+
+<p>En esta ocasión voy a resolver una máquina <strong>Windows - AD</strong> creada por <strong>tk0b4k</strong> de dificultad <strong>experto</strong> para la plataforma de <a href="https://thehackerslabs.com/">The Hackers Labs</a>.</p>
+
+<h3 id="escaneo-de-la-red"><strong>Escaneo de la red</strong></h3>
+
+<p>El primer paso es identificar qué dispositivos están activos en la red. Utilizamos <code class="language-plaintext highlighter-rouge">arp-scan</code> para hacer un escaneo de ARP y descubrimos un host:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">sudo </span>arp-scan <span class="nt">-I</span> enp0s10 <span class="nt">--localnet</span>
+192.168.56.8    08:00:27:35:b5:ff       <span class="o">(</span>Unknown<span class="o">)</span>
+</code></pre></div></div>
+
+<h3 id="escaneo-de-puertos"><strong>Escaneo de puertos</strong></h3>
+
+<p>Usamos <code class="language-plaintext highlighter-rouge">rustscan</code> para hacer un escaneo rápido y encontramos varios puertos abiertos:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ rustscan <span class="nt">-a</span> 192.168.56.8 <span class="nt">-b</span> 500
+Open 192.168.56.8:53
+Open 192.168.56.8:88
+Open 192.168.56.8:135
+Open 192.168.56.8:139
+Open 192.168.56.8:389
+Open 192.168.56.8:445
+Open 192.168.56.8:464
+Open 192.168.56.8:593
+Open 192.168.56.8:636
+Open 192.168.56.8:3268
+Open 192.168.56.8:3269
+Open 192.168.56.8:5985
+Open 192.168.56.8:9389
+Open 192.168.56.8:47001
+Open 192.168.56.8:49666
+Open 192.168.56.8:49667
+Open 192.168.56.8:49669
+Open 192.168.56.8:49670
+Open 192.168.56.8:49671
+Open 192.168.56.8:49681
+Open 192.168.56.8:49691
+Open 192.168.56.8:49699
+Open 192.168.56.8:49700
+Open 192.168.56.8:49664
+Open 192.168.56.8:49665
+</code></pre></div></div>
+
+<p>Ahora vamos a ver en que servicios hay funcionando en esos puertos y veremos las versiones que usan con <code class="language-plaintext highlighter-rouge">nmap</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ nmap <span class="nt">-sCV</span> <span class="nt">-p53</span>,88,135,139,389,445,464,593,636,3268,3269,5985,9389,47001,49666,49667,49669,49670,49671,49681,49691,49699,49700,49664,49665 <span class="nt">-v</span> 192.168.56.8
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos <span class="o">(</span>server <span class="nb">time</span>: 2024-10-18 20:11:37Z<span class="o">)</span>
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hackme.thl, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-10-18T20:12:39+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.hackme.thl
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.hackme.thl
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>hackme-DC-CA
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-10-16T13:11:58
+| Not valid after:  2025-10-16T13:11:58
+| MD5:   a449e115ec01929125da6f70f12a9d03
+|_SHA-1: 6a4eaa911dc484ea666951013f338e4840a84d91
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hackme.thl, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.hackme.thl
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.hackme.thl
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>hackme-DC-CA
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-10-16T13:11:58
+| Not valid after:  2025-10-16T13:11:58
+| MD5:   a449e115ec01929125da6f70f12a9d03
+|_SHA-1: 6a4eaa911dc484ea666951013f338e4840a84d91
+|_ssl-date: 2024-10-18T20:12:39+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hackme.thl, Site: Default-First-Site-Name<span class="o">)</span>
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.hackme.thl
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.hackme.thl
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>hackme-DC-CA
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-10-16T13:11:58
+| Not valid after:  2025-10-16T13:11:58
+| MD5:   a449e115ec01929125da6f70f12a9d03
+|_SHA-1: 6a4eaa911dc484ea666951013f338e4840a84d91
+|_ssl-date: 2024-10-18T20:12:39+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP <span class="o">(</span>Domain: hackme.thl, Site: Default-First-Site-Name<span class="o">)</span>
+|_ssl-date: 2024-10-18T20:12:39+00:00<span class="p">;</span> <span class="nt">-1s</span> from scanner time.
+| ssl-cert: Subject: <span class="nv">commonName</span><span class="o">=</span>DC.hackme.thl
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.hackme.thl
+| Issuer: <span class="nv">commonName</span><span class="o">=</span>hackme-DC-CA
+| Public Key <span class="nb">type</span>: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-10-16T13:11:58
+| Not valid after:  2025-10-16T13:11:58
+| MD5:   a449e115ec01929125da6f70f12a9d03
+|_SHA-1: 6a4eaa911dc484ea666951013f338e4840a84d91
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 <span class="o">(</span>SSDP/UPnP<span class="o">)</span>
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49667/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49670/tcp open  msrpc         Microsoft Windows RPC
+49671/tcp open  msrpc         Microsoft Windows RPC
+49681/tcp open  msrpc         Microsoft Windows RPC
+49691/tcp open  msrpc         Microsoft Windows RPC
+49699/tcp open  msrpc         Microsoft Windows RPC
+49700/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: DC<span class="p">;</span> OS: Windows<span class="p">;</span> CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+|_clock-skew: mean: <span class="nt">-1s</span>, deviation: 0s, median: <span class="nt">-1s</span>
+| smb2-time: 
+|   <span class="nb">date</span>: 2024-10-18T20:12:31
+|_  start_date: 2024-10-18T20:02:11
+| nbstat: NetBIOS name: DC, NetBIOS user: &lt;unknown&gt;, NetBIOS MAC: 08002735b5ff <span class="o">(</span>Oracle VirtualBox virtual NIC<span class="o">)</span>
+| Names:
+|   DC&lt;00&gt;               Flags: &lt;unique&gt;&lt;active&gt;
+|   HACKME&lt;00&gt;           Flags: &lt;group&gt;&lt;active&gt;
+|   HACKME&lt;1c&gt;           Flags: &lt;group&gt;&lt;active&gt;
+|   DC&lt;20&gt;               Flags: &lt;unique&gt;&lt;active&gt;
+|_  HACKME&lt;1b&gt;           Flags: &lt;unique&gt;&lt;active&gt;
+</code></pre></div></div>
+
+<p>Añadimos los nombres del <strong>Domain Controller</strong> y del <strong>Dominio</strong> al fichero <code class="language-plaintext highlighter-rouge">/etc/host</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ <span class="nb">echo</span> <span class="s1">'192.168.56.8 DC.hackme.thl hackme.thl'</span> | <span class="nb">sudo tee</span> <span class="nt">-a</span> /etc/hosts
+192.168.56.8 DC.hackme.thl hackme.thl
+</code></pre></div></div>
+
+<h3 id="enumeración-de-kerberos">Enumeración de Kerberos</h3>
+
+<p>Empezamos usando <strong>kerbrute</strong> (<a href="https://github.com/ropnop/kerbrute">https://github.com/ropnop/kerbrute</a>) para enumerar los posibles usuarios del dominio.</p>
+
+<p><img src="/assets/images/curiosity/1.png" alt="image" /></p>
+
+<p>Encontramos varios usuarios del dominio. Intentamos sin exito obtener la password de los usuarios con la herramienta <strong>kerbrute</strong> con la wordlist <strong>rockyou.</strong></p>
+
+<h3 id="responder">Responder</h3>
+
+<p>Usamos <strong>Responder</strong> una herramienta popular para la explotación de protocolos de red en entornos Windows, con el fin de interceptar y capturar posibles credenciales en tránsito.</p>
+
+<p>Ejecutamos, como root, <strong>Responder</strong> en modo pasivo para monitorear el tráfico de la red, con el comando <code class="language-plaintext highlighter-rouge">Responder -I enp0s10 -Pdv</code>:</p>
+
+<p><img src="/assets/images/curiosity/2.png" alt="image" /></p>
+
+<p>Obtenemos un hash del usuario de dominio <strong>hackme\jdoe</strong>, lo guardamos en un fichero llamado <strong>jdoe.hash</strong> para intentar romperlo.</p>
+
+<p><img src="/assets/images/curiosity/3.png" alt="image" /></p>
+
+<p>Para obtener la password he generado un script en python que me guarde en un fichero llamado <strong>filtered_passwords.txt</strong> todas las contraseñas de todos las wordlist de <strong><em>Seclists/Passwords</em></strong> que cumplan las políticas de contraseñas de Active Directory. Después usando <strong>hashcat</strong> en el modo 5600(NTLMv2) obtenemos la password de <strong>hackme\jdoe</strong>:</p>
+
+<p><img src="/assets/images/curiosity/4.png" alt="image" /></p>
+
+<h3 id="servicio-smb">Servicio smb</h3>
+
+<p>Ahora que contamos con credenciales válidas del dominio, procederemos a explorar lo que podemos obtener del servicio Samba:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>❯ enum4linux-ng <span class="nt">-A</span> 192.168.56.8 <span class="nt">-u</span> <span class="s1">'jdoe'</span> <span class="nt">-p</span> <span class="s1">'$**Redacted**'</span>
+
+....
+<span class="s1">'1120'</span>:
+  username: osama
+  name: <span class="o">(</span>null<span class="o">)</span>
+  acb: <span class="s1">'0x00000210'</span>
+  description: n<span class="o">()</span><span class="k">**</span>Redacted<span class="k">**</span>
+....
+
+....
+<span class="o">[</span>+] Found policy:
+Domain password information:
+  Password <span class="nb">history </span>length: 24
+  Minimum password length: 7
+  Maximum password age: 41 days 23 hours 53 minutes
+  Password properties:
+  - DOMAIN_PASSWORD_COMPLEX: <span class="nb">true</span>
+....
+</code></pre></div></div>
+
+<p>Entre otras cosas, obtenemos unas credenciales del usuario <strong>osama</strong> y confirmamos que se están usando las políticas de complejidad de las contraseñas.</p>
+
+<h3 id="intrusión-inicial">Intrusión inicial</h3>
+
+<p>Nos conectamos con el usuario <strong>jdoe</strong> a la máquina victima y obtenemos la flag de <strong>user.txt</strong>:</p>
+
+<p><img src="/assets/images/curiosity/5.png" alt="image" /></p>
+
+<h3 id="enumeración-del-dominio">Enumeración del dominio</h3>
+
+<p>Usamos la herramienta <strong>bloodhound-python</strong> (<a href="https://github.com/dirkjanm/BloodHound.py">https://github.com/dirkjanm/BloodHound.py</a>) para enumerar el dominio usando las credenciales de <strong>osama</strong> (también se puede con el usuario <strong>jdoe</strong>):</p>
+
+<p><img src="/assets/images/curiosity/6.png" alt="image" /></p>
+
+<p>Importamos los datos a <strong>Bloodhound</strong>. Como podemos ver el usuario <strong>jdoe</strong> pertenece al grupo <strong>it admins</strong>.</p>
+
+<p><img src="/assets/images/curiosity/7.png" alt="image" /></p>
+
+<p>Si investigamos lo que puede hacer el grupo <strong>it admins</strong> vemos que los usuarios pertenecientes a dicho grupo pueden cambiar la contraseña del usuario <strong>dba_adm.</strong></p>
+
+<p><img src="/assets/images/curiosity/8.png" alt="image" /></p>
+
+<h3 id="movimiento-lateral-al-usuario-dba_adm">Movimiento lateral al usuario dba_adm</h3>
+
+<p>Para cambiar la contraseña del usuario <strong>dba_adm</strong> he usado <strong>rpcclient</strong>. Nos conectamos usando las credenciales del usuario <strong>jdoe</strong> y usamos el modulo <strong>setuserinfo2</strong> para modificar la contraseña del usuario:</p>
+
+<p><img src="/assets/images/curiosity/9.png" alt="image" /></p>
+
+<p>Ahora podemos conectarnos como <strong>dba_adm</strong>:</p>
+
+<p><img src="/assets/images/curiosity/10.png" alt="image" /></p>
+
+<h3 id="sqlexpress">Sqlexpress</h3>
+
+<p>Usamos <strong>sqlcmd</strong> para conectarnos localmente al servidor <strong>sqlexpress</strong>. Usamos el parametro <strong>-Q</strong> para hacer una consulta, en este caso, le pedimos que nos de los nombres de las bases de datos que hay.</p>
+
+<p><img src="/assets/images/curiosity/11.png" alt="image" /></p>
+
+<p>Ahora le pedimos que nos muestre las tablas que hay dentro se la base de datos <strong>CredentialsDB</strong>:</p>
+
+<p><img src="/assets/images/curiosity/12.png" alt="image" /></p>
+
+<p>Y para terminar le pedimos todos los datos de la tabla <strong>Credentials</strong>:</p>
+
+<p><img src="/assets/images/curiosity/13.png" alt="image" /></p>
+
+<p>Guardamos el hash en nuestro equipo:</p>
+
+<p><img src="/assets/images/curiosity/14.png" alt="image" /></p>
+
+<p>Y usando <strong>hashcat</strong> en el modo 0 (MD5) y con la wordlist creada anteriormente obtenemos la clave del usuario <strong>sqlsvc</strong>:</p>
+
+<p><img src="/assets/images/curiosity/15.png" alt="image" /></p>
+
+<h3 id="usuario-sqlsvc">Usuario sqlsvc</h3>
+
+<p>Volvemos a <strong>Bloodhound</strong> y vemos que el usuario pertenece al grupo <strong>GMSA_USERS</strong> y este grupo a su vez puede leer la contraseña GMSA (ReadGMSAPassword) del usuario <strong>GMSA_SVC$</strong>.</p>
+
+<p><img src="/assets/images/curiosity/16.png" alt="image" /></p>
+
+<h3 id="gmsa">GMSA</h3>
+
+<p>Usando la herramienta <strong>nxc</strong> y el módulo <strong>ldap</strong> podemos obtener el hash del usuario <strong>GMSA_SVC$</strong>:</p>
+
+<p><img src="/assets/images/curiosity/17.png" alt="image" /></p>
+
+<p>Volvemos a <strong>Bloodhound</strong> y vemos que el usuario puede <strong>AllowedToAct</strong> sobre el controlador de dominio, esto quiere decir que nos permite actuar en nombre de otro usuario.</p>
+
+<p><img src="/assets/images/curiosity/18.png" alt="image" /></p>
+
+<h3 id="escalada-a-administrator">Escalada a administrator</h3>
+
+<p>Obtenemos el TGT del usuario <strong>GMSA_SVC$:</strong></p>
+
+<p><img src="/assets/images/curiosity/19.png" alt="image" /></p>
+
+<p>Exportamos el ticket y comprobamos que está bien con <strong>klist</strong>. Después solo nos queda usar el comando <strong>getST</strong> para obtener el <strong>TGT</strong> de administrador:</p>
+
+<p><img src="/assets/images/curiosity/20.png" alt="image" /></p>
+
+<p>Ya solo nos queda exportar el TGT de administrador y conectarnos con <strong>psexec</strong> para obtener una shell como <strong>NT Authority\System</strong></p>
+
+<p><img src="/assets/images/curiosity/21.png" alt="image" /></p>
+</div>
+      </section>
+      <footer>
+  <p>&copy; 2024 | murrusko</p>
+</footer>
+<script src="/assets/js/mode.js" defer></script>
+
+    </main>
+    <section id="category-modal-bg"></section>
+<section id="category-modal">
+  <h1 id="category-modal-title"></h1>
+  <section id="category-modal-content"></section>
+</section>
+
+  </body>
+</html>
